@@ -26,52 +26,34 @@ void get_send_kb_input(int c, int c1, int c2){
         if(c2==65){
             //su
             printf("\nIncrease Z\n");
-            fd_z=open("fifo_command_to_mot_z", O_WRONLY);
-            write(fd_z, &command_increase_z, sizeof(int));
-            //sleep(1);
-            //close(fd_z);    
+            write(fd_z, &command_increase_z, sizeof(int)); 
         }
         if(c2==66){
             //giu
             printf("\nDecrease Z\n");
-             fd_z=open("fifo_command_to_mot_z", O_WRONLY);
-            write(fd_z, &command_decrease_z, sizeof(int));
-            //sleep(1);
-           // close(fd_z);      
+            write(fd_z, &command_decrease_z, sizeof(int));    
         }
         if(c2==67){
             //dx
             printf("\nIncrease X\n");
-            fd_x=open("fifo_command_to_mot_x", O_WRONLY);
             write(fd_x, &command_increase_x, sizeof(int));
-            //sleep(1);
-            //close(fd_x);
         }
         if(c2==68){
             //sx
             printf("\nDecrease X\n");
-            fd_x=open("fifo_command_to_mot_x", O_WRONLY);
             write(fd_x, &command_decrease_x, sizeof(int));
-            //sleep(1);
-            //close(fd_x);
         }
     }
     else{
         if(c==120){
             //x stop
             printf("\nX stop\n");
-            fd_x=open("fifo_command_to_mot_x", O_WRONLY);
             write(fd_x, &command_stop_x, sizeof(int));
-            //sleep(1);
-            //close(fd_x);
         }
         if(c==122){
             //z stop
             printf("\nZ stop\n");
-            fd_z=open("fifo_command_to_mot_z", O_WRONLY);
-            write(fd_z, &command_stop_z, sizeof(int));
-            //sleep(1);
-            //close(fd_z);    
+            write(fd_z, &command_stop_z, sizeof(int)); 
         }
     } 
 }
@@ -93,24 +75,24 @@ int main(){
 
     /*Those new settings will be set to STDIN
     TCSANOW tells tcsetattr to change attributes immediately. */
-    tcsetattr( STDIN_FILENO, TCSANOW, &newt);
+tcsetattr( STDIN_FILENO, TCSANOW, &newt);
 
-    // if(fd_z=open("fifo_command_to_mot_z", O_WRONLY)==-1){
-    //     perror("Error opening fifo to motor z\n");
-    // }
-    // if(fd_x=open("fifo_command_to_mot_x", O_WRONLY)==-1){
-    //     perror("Error opening fifo to motor x\n");
-    // }
-   
-    //fd_x=open("fifo_command_to_mot_x", O_WRONLY);
-    while(1){ 
+printf("Use the following commands\n: ");
+printf("Press the upwards Arrow for moving the hoist upwards\n: ");
+printf("Press the downwards Arrow for moving the hoist downwards\n: ");
+printf("Press 'X' for stopping the horizontal movement\n: ");
+printf("Press 'Z' for stopping the vertical movement\n: ");  
+fflush(stdout); 
+fd_z=open("fifo_command_to_mot_z", O_WRONLY);
+fd_x=open("fifo_command_to_mot_x", O_WRONLY);
+while(1){ 
     get_send_kb_input(c, c1, c2);
-    }   
+}   
     
-    close(fd_x);
-    close(fd_z);
+close(fd_x);
+close(fd_z);
 
     /*restore the old settings*/
-    tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
-    return 0;
+tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
+return 0;
 }

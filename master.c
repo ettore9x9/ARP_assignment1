@@ -48,7 +48,7 @@ create_fifo("fifo_est_pos_z");
 pid_motor_x = spawn("./motor_x", arg_list_1);
 pid_motor_z = spawn("./motor_z", arg_list_2);
 pid_command = spawn("/usr/bin/konsole", arg_list_3);
-//pid_inspection = spawn("/usr/bin/konsole", arg_list_4);
+pid_inspection = spawn("/usr/bin/konsole", arg_list_4);
 //pid_wd = spawn("./wd", arg_list_5);
 
 wait(NULL);

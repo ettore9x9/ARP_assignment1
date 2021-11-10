@@ -19,12 +19,28 @@ float lower=-0.3;
 float x_upperbound = 10;
 float x_lowerbound = -10;
 int step = 1;
+int fd_x, fd_inspection_x, ret;
+int command = 0;
+
+
+void signal_handler(int sig) {
+
+    if(sig==SIGUSR1){
+        command=6;
+    }   
+    if(sig=SIGUSR2){
+        x_position=0;
+    }
+}
 
 int main(){
-    int fd_x, fd_inspection_x, ret;
-    int command = 0;
-    fd_set rset;
 
+    struct sigaction sa;
+    sa.sa_handler =&signal_handler;
+    sa.sa_flags=SA_RESTART;
+    sigaction(SIGUSR1,&sa,NULL);
+    sigaction(SIGUSR2,&sa,NULL);
+    fd_set rset;
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 0;

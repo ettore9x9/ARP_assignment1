@@ -20,12 +20,28 @@ float z_upperbound = 10;
 float z_lowerbound = -10;
 float z_est_pos = 0;
 int step = 1;
+int command = 0;
+
+void signal_handler(int sig) {
+
+    if(sig==SIGUSR1){
+        command=5;
+    }   
+    if(sig=SIGUSR2){
+        z_position=0;
+    }
+}
 
 
 int main(){
 
+    struct sigaction sa;
+    sa.sa_handler =&signal_handler;
+    sa.sa_flags=SA_RESTART;
+    sigaction(SIGUSR1,&sa,NULL);
+    sigaction(SIGUSR2,&sa,NULL);
+
     int fd_z,fd_inspection_z, ret;
-    int command = 0;
     fd_set rset;
 
     struct timeval tv;

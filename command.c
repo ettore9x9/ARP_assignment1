@@ -17,9 +17,10 @@ int command_increase_x=3;
 int command_decrease_x=4;
 int command_stop_z=5;
 int command_stop_x=6;
-
+int pid_wd; 
 void get_send_kb_input(int c, int c1, int c2){
     c=getchar(); 
+    kill(pid_wd, SIGTSTP);
     if(c==27){
         c1=getchar();
         c2=getchar();
@@ -58,10 +59,10 @@ void get_send_kb_input(int c, int c1, int c2){
     } 
 }
 
-int main(){   
+int main(int argc, char * argv[]){   
     int c, c1, c2;   
     static struct termios oldt, newt;
-    
+    pid_wd= atoi(argv[1]);
     /*tcgetattr gets the parameters of the current terminal
     STDIN_FILENO will tell tcgetattr that it should write the settings
     of stdin to oldt*/

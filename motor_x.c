@@ -28,7 +28,7 @@ void signal_handler(int sig) {
     if(sig==SIGUSR1){
         command=6;
     }   
-    if(sig=SIGUSR2){
+    if(sig==SIGUSR2){
         x_position=0;
     }
 }
@@ -45,15 +45,8 @@ int main(){
     tv.tv_sec = 0;
     tv.tv_usec = 0;
 
-    printf("I am the motor x\n");
-    fflush(stdout);
-
     fd_x = open("fifo_command_to_mot_x", O_RDONLY);
     fd_inspection_x=open("fifo_est_pos_x", O_WRONLY);
-
-    printf("dopo open");
-    fflush(stdout);
-
 
     while(1){
         FD_ZERO(&rset);
@@ -98,7 +91,7 @@ int main(){
         // Sleep fora a half of one second, if the command does not change, than repeat again the same command.
         printf("The current X position is: %.2f\n", x_position);
         fflush(stdout);
-        est_pos_x=x_position+ float_rand(-0.2,0.2); //compute the estimated position
+        est_pos_x=x_position+ float_rand(-0.05,0.05); //compute the estimated position
         write(fd_inspection_x, &est_pos_x, sizeof(float)); //send to inspection konsole
         usleep(500000);
 

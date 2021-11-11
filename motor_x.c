@@ -31,6 +31,7 @@ void signal_handler(int sig) {
     }   
     if(sig==SIGUSR2){
         x_position=0;
+        command=6;
     }
 }
 

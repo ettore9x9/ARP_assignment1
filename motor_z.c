@@ -29,6 +29,7 @@ void signal_handler(int sig) {
     }   
     if(sig==SIGUSR2){
         z_position=0;
+        command=5;
     }
 }
 
@@ -80,11 +81,11 @@ while(1){
         }
     }
     if(command == 2){
-        //printf("Motor Z received: decrease\n");
+        //Motor Z received: decrease
         if (z_position <= z_lowerbound){
             z_position = z_lowerbound;
             command = 5;
-               // printf("\rLower Z limit of the work envelope reached.");
+            //Lower Z limit of the work envelope reached
             } else {
                 z_position -= step;
             }

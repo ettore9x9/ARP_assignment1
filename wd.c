@@ -7,11 +7,13 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#define PERIOD 10
 
-int SECONDS=10;
+int SECONDS=PERIOD;
 void signal_handler(int sig) {
     if(sig==SIGTSTP){
-        SECONDS=10;
+        SECONDS=PERIOD;
+        //printf("\nwd: I received a sig, seconds=10\n");
     }   
 }
 
@@ -35,6 +37,7 @@ int main(int argc, char * argv[]){
 
         kill(pid_motor_x, SIGUSR2);
         kill(pid_motor_z, SIGUSR2);
+        SECONDS=PERIOD;
     }
     return(0);
 }

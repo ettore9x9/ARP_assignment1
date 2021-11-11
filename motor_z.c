@@ -27,32 +27,30 @@ void signal_handler(int sig) {
     if(sig==SIGUSR1){
         command=5;
     }   
-    if(sig=SIGUSR2){
+    if(sig==SIGUSR2){
         z_position=0;
     }
 }
 
 
+
 int main(){
 
+    int fd_z,fd_inspection_z, ret;
+    
+    fd_set rset;
     struct sigaction sa;
     sa.sa_handler =&signal_handler;
     sa.sa_flags=SA_RESTART;
     sigaction(SIGUSR1,&sa,NULL);
     sigaction(SIGUSR2,&sa,NULL);
-
-    int fd_z,fd_inspection_z, ret;
-    fd_set rset;
-
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 0;
-
-    //printf("I am the motor z\n");
     fd_z = open("fifo_command_to_mot_z", O_RDONLY);
     fd_inspection_z=open("fifo_est_pos_z", O_WRONLY);
-while(1){
     
+while(1){    
     FD_ZERO(&rset);
     FD_SET(fd_z, &rset);
     ret=select(FD_SETSIZE, &rset, NULL, NULL, &tv);
@@ -93,7 +91,7 @@ while(1){
         // Sleep for a half of a second, if the command does not change, than repeat again the same command.
         printf("The current Z position is: %.2f\n", z_position);
         fflush(stdout);
-        est_pos_z=z_position + float_rand(-0.2,0.2); //compute the estimated position
+        est_pos_z=z_position + float_rand(-0.05,0.05); //compute the estimated position
         write(fd_inspection_z, &est_pos_z, sizeof(float)); //send to inspection konsole
         usleep(500000);
 

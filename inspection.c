@@ -9,6 +9,7 @@
 #include <string.h>
 
 int main(int argc, char * argv[]){
+	
 int fd_from_motor_x, fd_from_motor_z;
 int ret;
 int pid_motor_x=atoi(argv[1]);
@@ -68,7 +69,7 @@ while(1){
 		printf("\r                                               ");
 		printf("\rEstimated position (X, Z) = (%.3f,%.3f) ", est_pos_x, est_pos_z);
 		fflush(stdout);
-		usleep(500000);
+		usleep(150000);
 	}
 close(fd_from_motor_x);
 close(fd_from_motor_z);

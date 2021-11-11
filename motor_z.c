@@ -8,18 +8,18 @@
 #include <signal.h>
 #include <string.h>
 
+#define Z_UB 10
+#define Z_LB 0
+#define STEP 0.01
+
 float float_rand( float min, float max )
 {
     float scale = rand() / (float) RAND_MAX; /* [0, 1.0] */
     return min + scale * ( max - min );      /* [min, max] */
 }
 
-float z_position = 0;
-float est_pos_z=0;
-float z_upperbound = 10;
-float z_lowerbound = -10;
-float z_est_pos = 0;
-int step = 1;
+float z_position = Z_LB;
+float est_pos_z=Z_LB;
 int command = 0;
 
 void signal_handler(int sig) {
@@ -72,22 +72,20 @@ while(1){
     }
     if(command == 1){
         //printf("Motor Z received: increase\n");
-        if (z_position >= z_upperbound){
-           
+        if (z_position > Z_UB){
             command = 5;
            // printf("\rUpper Z limit of the work envelope reached.");
         } else {
-            z_position += step;
+            z_position += STEP;
         }
     }
     if(command == 2){
         //Motor Z received: decrease
-        if (z_position <= z_lowerbound){
-            z_position = z_lowerbound;
+        if (z_position < Z_LB){
             command = 5;
             //Lower Z limit of the work envelope reached
             } else {
-                z_position -= step;
+                z_position -= STEP;
             }
         }
     if(command == 5){
@@ -100,7 +98,7 @@ while(1){
         fflush(stdout);
         est_pos_z=z_position + float_rand(-0.05,0.05); //compute the estimated position
         write(fd_inspection_z, &est_pos_z, sizeof(float)); //send to inspection konsole
-        usleep(500000);
+        usleep(200000);
 
     } // End of the while cycle.
 close(fd_z);

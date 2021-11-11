@@ -7,19 +7,18 @@
 #include <sys/time.h>
 #include <string.h>
 
-float float_rand( float min, float max )
+#define X_UB 10 
+#define X_LB 0
+#define STEP 0.01 
+
+float float_rand( float min, float max ) //error
 {
     float scale = rand() / (float) RAND_MAX; /* [0, 1.0] */
     return min + scale * ( max - min );      /* [min, max] */
 }
 
-float x_position = 0;
-float est_pos_x=0;
-float upper=0.3;
-float lower=-0.3;
-float x_upperbound = 10;
-float x_lowerbound = -10;
-int step = 1;
+float x_position = X_LB;
+float est_pos_x=X_LB;
 int fd_x, fd_inspection_x, ret;
 int command = 0;
 
@@ -74,24 +73,24 @@ int main(){
         
         if(command == 3){
             //printf("Motor X received: increase\n");
-            if (x_position >= x_upperbound){
+            if (x_position > X_UB){
                 
                 command = 6;
                // printf("Upper X limit of the work envelope reached.\n");
             } else {
-                x_position += step;
+                x_position += STEP;
             }
 
         }
 
         if(command == 4){
             //printf("Motor X received: decrease\n");
-            if (x_position <= x_lowerbound){
-                x_position = x_lowerbound;
+            if (x_position < X_LB){
+
                 command = 6;
                // printf("Lower X limit of the work envelope reached.\n");
             } else {
-                x_position -= step;
+                x_position -= STEP;
             }
         }
 
@@ -103,7 +102,7 @@ int main(){
         fflush(stdout);
         est_pos_x=x_position+ float_rand(-0.05,0.05); //compute the estimated position
         write(fd_inspection_x, &est_pos_x, sizeof(float)); //send to inspection konsole
-        usleep(500000);
+        usleep(200000);
 
     } // End of the while cycle.
 close(fd_x);

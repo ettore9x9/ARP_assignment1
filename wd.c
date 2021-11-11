@@ -7,17 +7,19 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
-#define PERIOD 10
 
-int SECONDS=PERIOD;
+#define PERIOD 30
+
+int timer = PERIOD;
+
 void signal_handler(int sig) {
     if(sig==SIGTSTP){
-        SECONDS=PERIOD;
-        //printf("\nwd: I received a sig, seconds=10\n");
+        timer=PERIOD;
     }   
 }
 
 int main(int argc, char * argv[]){
+
     int pid_motor_x=atoi(argv[1]);
     int pid_motor_z=atoi(argv[2]);
 
@@ -27,17 +29,16 @@ int main(int argc, char * argv[]){
     sa.sa_flags=SA_RESTART;
     sigaction(SIGTSTP,&sa,NULL);
 
-    while(1)
-    {
-        while (SECONDS>=0){
-            //printf("\n seconds: %d\n", SECONDS);
+    while(1){
+
+        while (timer >= 0){
             sleep(1);
-            SECONDS--;
+            timer--;
         }
 
         kill(pid_motor_x, SIGUSR2);
         kill(pid_motor_z, SIGUSR2);
-        SECONDS=PERIOD;
+        timer=PERIOD;
     }
     return(0);
 }

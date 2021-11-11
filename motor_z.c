@@ -8,18 +8,12 @@
 #include <signal.h>
 #include <string.h>
 
-#define Z_UB 10
+#define Z_UB 9.9
 #define Z_LB 0
 #define STEP 0.01
 
-float float_rand( float min, float max )
-{
-    float scale = rand() / (float) RAND_MAX; /* [0, 1.0] */
-    return min + scale * ( max - min );      /* [min, max] */
-}
-
 float z_position = Z_LB;
-float est_pos_z=Z_LB;
+float est_pos_z = Z_LB;
 int command = 0;
 
 void signal_handler(int sig) {
@@ -33,10 +27,16 @@ void signal_handler(int sig) {
     }
 }
 
+float float_rand( float min, float max ) {
+    // Function to generate a randomic error.
+
+    float scale = rand() / (float) RAND_MAX; /* [0, 1.0] */
+    return min + scale * ( max - min );      /* [min, max] */
+}
+
 int main(){
 
     int fd_z,fd_inspection_z, ret;
-    fd_set rset;
 
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
@@ -51,6 +51,8 @@ int main(){
     sigaction(SIGUSR1,&sa,NULL);
     sigaction(SIGUSR2,&sa2,NULL);
 
+    fd_set rset;
+
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 0;
@@ -58,50 +60,50 @@ int main(){
     fd_z = open("fifo_command_to_mot_z", O_RDONLY);
     fd_inspection_z=open("fifo_est_pos_z", O_WRONLY);
     
-while(1){    
-    FD_ZERO(&rset);
-    FD_SET(fd_z, &rset);
-    ret=select(FD_SETSIZE, &rset, NULL, NULL, &tv);
+    while(1){    
+        FD_ZERO(&rset);
+        FD_SET(fd_z, &rset);
+        ret = select(FD_SETSIZE, &rset, NULL, NULL, &tv);
 
-    if(ret==-1){
-        perror("select() on motor z\n");
-        fflush(stdout);
-    }
-    else if(FD_ISSET(fd_z, &rset)!=0){
-        read(fd_z, &command, sizeof(int));
-    }
-    if(command == 1){
-        //printf("Motor Z received: increase\n");
-        if (z_position > Z_UB){
-            command = 5;
-           // printf("\rUpper Z limit of the work envelope reached.");
-        } else {
-            z_position += STEP;
+        if(ret == -1){
+            perror("select() on motor z\n");
+            fflush(stdout);
         }
-    }
-    if(command == 2){
-        //Motor Z received: decrease
-        if (z_position < Z_LB){
-            command = 5;
-            //Lower Z limit of the work envelope reached
+        else if(FD_ISSET(fd_z, &rset) != 0){
+            read(fd_z, &command, sizeof(int));
+        }
+        if(command == 1){
+            //printf("Motor Z received: increase\n");
+            if (z_position > Z_UB){
+                command = 5;
+               // printf("\rUpper Z limit of the work envelope reached.");
             } else {
-                z_position -= STEP;
+                z_position += STEP;
             }
         }
-    if(command == 5){
-        //do nothing
+        if(command == 2){
+            //Motor Z received: decrease
+            if (z_position < Z_LB){
+                command = 5;
+                //Lower Z limit of the work envelope reached
+                } else {
+                    z_position -= STEP;
+                }
+            }
+        if(command == 5){
+            //do nothing
         }
 
 
-        // Sleep for a half of a second, if the command does not change, than repeat again the same command.
-        printf("The current Z position is: %.2f\n", z_position);
-        fflush(stdout);
-        est_pos_z=z_position + float_rand(-0.05,0.05); //compute the estimated position
+        // Sleeps. If the command does not change, than repeats again the same command.
+        est_pos_z=z_position + float_rand(-0.005,0.005); //compute the estimated position
         write(fd_inspection_z, &est_pos_z, sizeof(float)); //send to inspection konsole
-        usleep(200000);
+        usleep(20000);
 
     } // End of the while cycle.
-close(fd_z);
-close(fd_inspection_z);
-return 0;
+
+    close(fd_z);
+    close(fd_inspection_z);
+
+    return 0;
 }

@@ -20,6 +20,7 @@ printf("I am the inspection, these are the current hoist X & Z positions:\n");
 fflush(stdout);
 fd_from_motor_x=open("fifo_est_pos_x", O_RDONLY);
 fd_from_motor_z=open("fifo_est_pos_z", O_RDONLY);
+
 while(1){
 	FD_ZERO(&rset);
     FD_SET(fd_from_motor_x, &rset);

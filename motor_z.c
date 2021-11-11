@@ -32,21 +32,28 @@ void signal_handler(int sig) {
     }
 }
 
-
-
 int main(){
 
     int fd_z,fd_inspection_z, ret;
-    
     fd_set rset;
+
     struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
     sa.sa_handler =&signal_handler;
     sa.sa_flags=SA_RESTART;
+
+    struct sigaction sa2;
+    memset(&sa2, 0, sizeof(sa2));
+    sa2.sa_handler =&signal_handler;
+    sa2.sa_flags=SA_RESTART;
+
     sigaction(SIGUSR1,&sa,NULL);
-    sigaction(SIGUSR2,&sa,NULL);
+    sigaction(SIGUSR2,&sa2,NULL);
+
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 0;
+
     fd_z = open("fifo_command_to_mot_z", O_RDONLY);
     fd_inspection_z=open("fifo_est_pos_z", O_WRONLY);
     
@@ -54,6 +61,7 @@ while(1){
     FD_ZERO(&rset);
     FD_SET(fd_z, &rset);
     ret=select(FD_SETSIZE, &rset, NULL, NULL, &tv);
+
     if(ret==-1){
         perror("select() on motor z\n");
         fflush(stdout);
@@ -71,7 +79,6 @@ while(1){
             z_position += step;
         }
     }
-
     if(command == 2){
         //printf("Motor Z received: decrease\n");
         if (z_position <= z_lowerbound){
@@ -82,7 +89,6 @@ while(1){
                 z_position -= step;
             }
         }
-
     if(command == 5){
         //do nothing
         }

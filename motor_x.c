@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <string.h>
 
 float float_rand( float min, float max )
 {
@@ -36,10 +37,18 @@ void signal_handler(int sig) {
 int main(){
 
     struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
     sa.sa_handler =&signal_handler;
     sa.sa_flags=SA_RESTART;
+
+    struct sigaction sa2;
+    memset(&sa2, 0, sizeof(sa2));
+    sa2.sa_handler =&signal_handler;
+    sa2.sa_flags=SA_RESTART;
+
     sigaction(SIGUSR1,&sa,NULL);
-    sigaction(SIGUSR2,&sa,NULL);
+    sigaction(SIGUSR2,&sa2,NULL);
+
     fd_set rset;
     struct timeval tv;
     tv.tv_sec = 0;

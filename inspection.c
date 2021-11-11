@@ -65,9 +65,6 @@ while(1){
 
 		}
 
-
-		// printf("The current estimated X position is: %f ", est_pos_x);
-		// printf("The current estimated Z position is: %f\n", est_pos_z);
 		printf("\r                                               ");
 		printf("\rEstimated position (X, Z) = (%.3f,%.3f) ", est_pos_x, est_pos_z);
 		fflush(stdout);

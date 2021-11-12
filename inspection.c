@@ -11,7 +11,7 @@
 
 /*FUNCTIONS*/
 void printer(float x, float z){
-	// Print on screen dinamically with a fixed format.
+	// Print on screen dynamically with a fixed format.
 
 	printf("\r                                               ");
 	if (x >= 0 && z >= 0){
@@ -34,7 +34,8 @@ void printer(float x, float z){
 //crate a LogFile
 FILE *file;
 void file_printer(float x, float z){
-	fprintf(file, "(X, Z)= ( %.3f, %.3f) \n", x, z);
+	//print on a text file
+	fprintf(file, "  %.3f, %.3f  \n", x, z);
 }
 
 
@@ -61,7 +62,7 @@ int main(int argc, char * argv[]){
 	file=fopen("Log.txt", "w");
 	if(!file){
 		perror("Error file");
-    	exit(-1);
+    	return -1;
 	}
 	printf("This is the inspection konsole, these are the current hoist X & Z positions:\n");
 	printf("Press the 'r' button for resetting the hoist position\n");
@@ -81,6 +82,7 @@ int main(int argc, char * argv[]){
 
 		if(ret == -1){ // An error occours.
 				perror("select() on motor x\n");
+				return -2;
 			}
 
 		if( FD_ISSET(0, &rset) != 0 ){ //if the standard input receives any inputs...
@@ -115,7 +117,7 @@ int main(int argc, char * argv[]){
 	int return_file;
 	if(return_file=remove("Log.txt")!=0){
 		perror("Could not create a file\n");
+		return -3;
 	}
-
 	return 0;
 }

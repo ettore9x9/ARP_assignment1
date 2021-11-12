@@ -12,7 +12,7 @@
 
 // Declare PIDs of the children programs as global variables.
 pid_t pid_command, pid_motor_x, pid_motor_z, pid_inspection, pid_wd;
-
+int wstatus;
 /*FUNCTIONS*/
 
 int spawn(const char * program, char ** arg_list) {
@@ -26,7 +26,7 @@ int spawn(const char * program, char ** arg_list) {
         execvp (program, arg_list);
 
         perror("exec failed");  // If it's executed, an error occurred.
-    return 1;
+    return -4;
     }
 }
 
@@ -35,7 +35,7 @@ void create_fifo (const char * name){
     if(mkfifo(name, 0666)==-1){
         if (errno != EEXIST){
           perror("Error creating named fifo\n");
-          exit (1);
+          exit(-5);
         }
     }
 }
@@ -75,7 +75,18 @@ int main() {
     pid_inspection = spawn("/usr/bin/konsole", arg_list_insp);
 
     //wait for child processes 
-    wait(NULL);
+    wait(&wstatus);
+    if(WIFEXITED(wstatus)){
+        int status=WEXITSTATUS(wstatus);
+        if(status<0){ //if any of child processes returns a negative number kill all of them!
+            printf("Negative number occured\n");
+            kill(pid_command, SIGKILL);
+            kill(pid_inspection, SIGKILL);
+            kill(pid_wd, SIGKILL);
+            kill(pid_motor_x, SIGKILL);
+            kill(pid_motor_z, SIGKILL);
+    }
+    }
 
     // Deletes named pipes.
     unlink("fifo_command_to_mot_x");

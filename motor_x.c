@@ -13,7 +13,7 @@
 #define X_UB 9.9
 #define X_LB 0
 #define STEP 0.01
-float x_position = X_LB;
+float x_position = X_LB; //the hoist has a starting position of (X, Z)=(0, 0)
 float est_pos_x = X_LB;
 int command = 0;
 
@@ -52,8 +52,14 @@ int main(){
     sa2.sa_handler =&signal_handler;
     sa2.sa_flags=SA_RESTART;
     //sigaction for SIGUSR1 & SIGUSR2
-    sigaction(SIGUSR1,&sa,NULL);
-    sigaction(SIGUSR2,&sa2,NULL);
+    if(sigaction(SIGUSR1,&sa,NULL)==-1){
+        perror("Sigaction error, SIGUSR1 motor x\n");
+        return -6;
+    }
+    if(sigaction(SIGUSR2,&sa2,NULL)==-1){
+        perror("Sigaction error, SIGUSR2 motor x");
+        return -7;
+    }
 
     fd_set rset; //ready set of file descriptors
 
@@ -74,6 +80,7 @@ int main(){
 
         if(ret == -1){ // An error occours.
             perror("select() on motor x\n");
+            return -8;
         }
         else if( FD_ISSET(fd_x, &rset) != 0 ){ // There is something to read!
             read(fd_x, &command, sizeof(int)); // Update the command.

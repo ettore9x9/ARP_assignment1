@@ -30,7 +30,10 @@ int main(int argc, char * argv[]){
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler =&signal_handler;
     sa.sa_flags=SA_RESTART;
-    sigaction(SIGTSTP,&sa,NULL);
+    if(sigaction(SIGTSTP,&sa,NULL)==-1){
+        perror("Sigaction error, SIGTSTP in WatchDog\n");
+        return -9;
+    }
 
     while(1){
 

@@ -1,3 +1,4 @@
+/*LIBRARIES*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -8,36 +9,41 @@
 #include <signal.h>
 #include <string.h>
 
+/*GLOBAL VARIABLES*/
+
 #define Z_UB 9.9
 #define Z_LB 0
 #define STEP 0.01
-
 float z_position = Z_LB;
 float est_pos_z = Z_LB;
 int command = 0;
 
+/*FUNCTIONS*/
+
 void signal_handler(int sig) {
 
     if(sig==SIGUSR1){
-        command=5;
+        command=5; //stop command
     }   
     if(sig==SIGUSR2){
-        z_position=0;
-        command=5;
+        z_position=0; //reset the x_position
+        command=5; //and then stop the hoist movement
     }
 }
 
 float float_rand( float min, float max ) {
     // Function to generate a randomic error.
 
-    float scale = rand() / (float) RAND_MAX; /* [0, 1.0] */
+    float scale = rand() / (float) RAND_MAX; 
     return min + scale * ( max - min );      /* [min, max] */
 }
 
+/*MAIN()*/
+
 int main(){
 
-    int fd_z,fd_inspection_z, ret;
-
+    int fd_z,fd_inspection_z; //file descriptors
+    int ret; //select() system call return value
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler =&signal_handler;
@@ -47,16 +53,18 @@ int main(){
     memset(&sa2, 0, sizeof(sa2));
     sa2.sa_handler =&signal_handler;
     sa2.sa_flags=SA_RESTART;
-
+    //sigaction for SIGUSR1 & SIGUSR2
     sigaction(SIGUSR1,&sa,NULL);
     sigaction(SIGUSR2,&sa2,NULL);
 
-    fd_set rset;
+    fd_set rset; //ready set of file descriptors
 
+    /*the select() system call does not wait for file descriptors to be ready */
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 0;
 
+    //opening pies
     fd_z = open("fifo_command_to_mot_z", O_RDONLY);
     fd_inspection_z=open("fifo_est_pos_z", O_WRONLY);
     
@@ -65,33 +73,29 @@ int main(){
         FD_SET(fd_z, &rset);
         ret = select(FD_SETSIZE, &rset, NULL, NULL, &tv);
 
-        if(ret == -1){
+        if(ret == -1){ // An error occours.
             perror("select() on motor z\n");
             fflush(stdout);
         }
-        else if(FD_ISSET(fd_z, &rset) != 0){
-            read(fd_z, &command, sizeof(int));
+        else if(FD_ISSET(fd_z, &rset) != 0){ // There is something to read!
+            read(fd_z, &command, sizeof(int)); // Update the command.
         }
         if(command == 1){
-            //printf("Motor Z received: increase\n");
-            if (z_position > Z_UB){
-                command = 5;
-               // printf("\rUpper Z limit of the work envelope reached.");
+            if (z_position > Z_UB){ //Upper Z limit of the work envelope reached
+                command = 5; //stop command
             } else {
-                z_position += STEP;
+                z_position += STEP; //go upwards
             }
         }
         if(command == 2){
-            //Motor Z received: decrease
-            if (z_position < Z_LB){
-                command = 5;
-                //Lower Z limit of the work envelope reached
+            if (z_position < Z_LB){ //Lower Z limit of the work envelope reached
+                command = 5; //stop command
                 } else {
-                    z_position -= STEP;
+                    z_position -= STEP; //go downwards
                 }
             }
-        if(command == 5){
-            //do nothing
+        if(command == 5){ //stop command
+        // z_position must not change
         }
 
 
@@ -101,7 +105,7 @@ int main(){
         usleep(20000);
 
     } // End of the while cycle.
-
+    //closing pipes
     close(fd_z);
     close(fd_inspection_z);
 

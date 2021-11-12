@@ -1,3 +1,4 @@
+/*LIBRARIES*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -11,6 +12,8 @@
 
 // Declare PIDs of the children programs as global variables.
 pid_t pid_command, pid_motor_x, pid_motor_z, pid_inspection, pid_wd;
+
+/*FUNCTIONS*/
 
 int spawn(const char * program, char ** arg_list) {
     // Function to generate a child process, it returns the PID of the child.
@@ -37,6 +40,7 @@ void create_fifo (const char * name){
     }
 }
 
+/*MAIN()*/
 int main() {
 
     // Creates all named pipes for communications.
@@ -70,6 +74,7 @@ int main() {
     char * arg_list_insp[] = { "/usr/bin/konsole",  "-e", "./inspection", pid_motor_x_char, pid_motor_z_char, pid_wd_char ,(char*)NULL };
     pid_inspection = spawn("/usr/bin/konsole", arg_list_insp);
 
+    //wait for child processes 
     wait(NULL);
 
     // Deletes named pipes.

@@ -1,3 +1,4 @@
+/*LIBRARIES*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -8,66 +9,61 @@
 #include <signal.h>
 #include <string.h>
 #include<stdio.h>
-#include <termios.h>        
+#include <termios.h>   
 
-const int cmd_increase_z = 1;
-const int cmd_decrease_z = 2;
-const int cmd_increase_x = 3;
-const int cmd_decrease_x = 4;
-const int cmd_stop_z = 5;
-const int cmd_stop_x = 6;
+/*GLOBAL VARIABLES*/     
+const int cmd_increase_z = 1; //this represents the "increase Z" command
+const int cmd_decrease_z = 2; //this represents the "decrease Z" command
+const int cmd_increase_x = 3; //this represents the "increase X" command
+const int cmd_decrease_x = 4; //this represents the "decrease X" command
+const int cmd_stop_z = 5; //this represents the "STOP Z" command
+const int cmd_stop_x = 6; //this represents the "STOP X" command
+int fd_x, fd_z; //file descriptors
+pid_t pid_wd; //process ID
 
-int fd_x, fd_z;
-
-pid_t pid_wd;
-
+/*FUNCTIONS*/
 void interpreter(){
 
     int c, c1, c2;
-    c = getchar(); 
-    kill(pid_wd, SIGTSTP); // Send a signal to the watchdog.
+    c = getchar(); //get input from keyboard
+    kill(pid_wd, SIGTSTP); // Send a signal to let the watchdog know that an input occurred.
 
-    if(c == 27){
+    if(c == 27){ //the ASCII numbers for arrows is a combination of three numbers, the first two (27 and 91) are always the same
         c1 = getchar();
 
-        if (c1 == 91){
+        if (c1 == 91){ 
             c2 = getchar();
-            if(c2 == 65){
-                //su
+            if(c2 == 65){ //third ASCII nummber for upwards arrow
                 printf("\nIncrease Z\n");
                 write(fd_z, &cmd_increase_z, sizeof(int)); 
             }
-            if(c2 == 66){
-                //giu
+            if(c2 == 66){ //third ASCII nummber for downwards arrow
                 printf("\nDecrease Z\n");
                 write(fd_z, &cmd_decrease_z, sizeof(int));    
             }
-            if(c2 == 67){
-                //dx
+            if(c2 == 67){ //third ASCII nummber for right arrow
                 printf("\nIncrease X\n");
                 write(fd_x, &cmd_increase_x, sizeof(int));
             }
-            if(c2 == 68){
-                //sx
+            if(c2 == 68){ //third ASCII nummber for left arrow
                 printf("\nDecrease X\n");
                 write(fd_x, &cmd_decrease_x, sizeof(int));
             }
         }
     }
     else{
-        if(c == 120){
-            //x stop
+        if(c == 120){ //ASCII number for 'x' keyboard key
             printf("\nX stop\n");
             write(fd_x, &cmd_stop_x, sizeof(int));
         }
-        if(c == 122){
-            //z stop
+        if(c == 122){ //ASCII number for 'z' keyboard key
             printf("\nZ stop\n");
             write(fd_z, &cmd_stop_z, sizeof(int)); 
         }
     }
 }
 
+/*MAIN()*/
 int main(int argc, char * argv[]){   
 
     static struct termios oldt, newt;
@@ -96,13 +92,15 @@ int main(int argc, char * argv[]){
     printf("Press 'Z' for stopping the vertical movement\n: ");  
     fflush(stdout); 
 
+    //opening pipes
     fd_z=open("fifo_command_to_mot_z", O_WRONLY);
     fd_x=open("fifo_command_to_mot_x", O_WRONLY);
 
     while(1){ 
         interpreter();
     }   
-        
+    
+    //closing pipes
     close(fd_x);
     close(fd_z);
 

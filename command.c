@@ -9,7 +9,15 @@
 #include <signal.h>
 #include <string.h>
 #include<stdio.h>
-#include <termios.h>   
+#include <termios.h>  
+
+/*COLORS*/
+/*COLORS*/
+#define RESET "\033[0m"
+#define BHRED "\e[1;91m"
+#define BHGRN "\e[1;92m"
+#define BHYEL "\e[1;93m"
+#define BHMAG "\e[1;95m"
 
 /*GLOBAL VARIABLES*/     
 const int cmd_increase_z = 1; //this represents the "increase Z" command
@@ -34,30 +42,30 @@ void interpreter(){
         if (c1 == 91){ 
             c2 = getchar();
             if(c2 == 65){ //third ASCII nummber for upwards arrow
-                printf("\nIncrease Z\n");
+                printf("\n" BHYEL "Increase Z" RESET "\n");
                 write(fd_z, &cmd_increase_z, sizeof(int)); 
             }
             if(c2 == 66){ //third ASCII nummber for downwards arrow
-                printf("\nDecrease Z\n");
+                printf("\n" BHYEL "Decrease Z" RESET "\n");
                 write(fd_z, &cmd_decrease_z, sizeof(int));    
             }
             if(c2 == 67){ //third ASCII nummber for right arrow
-                printf("\nIncrease X\n");
+                printf("\n" BHMAG "Increase X" RESET "\n");
                 write(fd_x, &cmd_increase_x, sizeof(int));
             }
             if(c2 == 68){ //third ASCII nummber for left arrow
-                printf("\nDecrease X\n");
+                printf("\n" BHMAG "Decrease X" RESET "\n");
                 write(fd_x, &cmd_decrease_x, sizeof(int));
             }
         }
     }
     else{
         if(c == 120){ //ASCII number for 'x' keyboard key
-            printf("\nX stop\n");
+            printf("\n" BHRED "X stop" RESET "\n");
             write(fd_x, &cmd_stop_x, sizeof(int));
         }
         if(c == 122){ //ASCII number for 'z' keyboard key
-            printf("\nZ stop\n");
+            printf("\n" BHRED "Z stop" RESET "\n");
             write(fd_z, &cmd_stop_z, sizeof(int)); 
         }
     }
@@ -85,11 +93,11 @@ int main(int argc, char * argv[]){
     TCSANOW tells tcsetattr to change attributes immediately. */
     tcsetattr( STDIN_FILENO, TCSANOW, &newt);
 
-    printf("Use the following commands\n: ");
-    printf("Press the upwards Arrow for moving the hoist upwards\n: ");
-    printf("Press the downwards Arrow for moving the hoist downwards\n: ");
-    printf("Press 'X' for stopping the horizontal movement\n: ");
-    printf("Press 'Z' for stopping the vertical movement\n: ");  
+    printf(BHGRN "This is the COMMAND console: you can use the following commands: " RESET "\n");
+    printf(BHMAG "Press the upwards Arrow for moving the hoist upwards" RESET "\n");
+    printf(BHMAG "Press the downwards Arrow for moving the hoist downwards" RESET "\n");
+    printf(BHYEL "Press 'X' for stopping the horizontal movement" RESET "\n");
+    printf(BHYEL "Press 'Z' for stopping the vertical movement" RESET "\n");  
     fflush(stdout); 
 
     //opening pipes

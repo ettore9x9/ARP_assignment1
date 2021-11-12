@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <ncurses.h>
+#include <math.h>
 
 /*COLORS*/
 #define RESET "\033[0m"
@@ -16,27 +18,75 @@
 #define BHYEL "\e[1;93m"
 #define BHMAG "\e[1;95m"
 
-
+int last_row = 20;
+int last_col = 20;
 
 /*FUNCTIONS*/
-void printer(float x, float z){
-	// Print on screen dynamically with a fixed format.
+void setup_konsole(){
 
-	printf("\r                                               ");
+	initscr();
+
+	addstr("This is the INSPECTION console.\n");
+	addstr("Press the 'r' for resetting the hoist position\n");
+	addstr("Press the 's' for stopping the hoist movement\n");
+	addstr("\n");
+	addstr("||===================================================||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("||                                                   ||\n");
+    addstr("\n");
+
+	refresh();
+}
+
+void printer(float x, float z){
+
+	int row = floor( (z / 0.625) + 0.2 ) + 5;
+    int col = floor( (x / 0.2) + 0.2 ) + 2;
+
+    curs_set(0);
+
+	// Print on screen dynamically with a fixed format.
+    move(26, 0);
+	// printw("\r                                               ");
 	if (x >= 0 && z >= 0){
-		printf("\rEstimated position (X, Z) = ( %.3f, %.3f) ", x, z);
+		printw("\rEstimated position (X, Z) = ( %.3f, %.3f) ", x, z);
 
 	} else if (x < 0 && z >= 0) {
-		printf("\rEstimated position (X, Z) = (%.3f, %.3f) ", x, z);
+		printw("\rEstimated position (X, Z) = (%.3f, %.3f) ", x, z);
 
 	} else if (x >= 0 && z < 0) {
-		printf("\rEstimated position (X, Z) = ( %.3f,%.3f) ", x, z);
+		printw("\rEstimated position (X, Z) = ( %.3f,%.3f) ", x, z);
 
 	} else if (x < 0 && z < 0) {
-		printf("\rEstimated position (X, Z) = (%.3f,%.3f) ", x, z);
+		printw("\rEstimated position (X, Z) = (%.3f,%.3f) ", x, z);
 	}
+	printw("last_row = %d, last col = %d      ", last_row, last_col);
 
-	fflush(stdout);
+    move(last_row, last_col);
+    addch(' ');
+
+    move(row, col);
+    addch('o');
+
+    last_row = row;
+    last_col = col;
+
+    refresh();
 }
 
 
@@ -73,12 +123,11 @@ int main(int argc, char * argv[]){
 		perror("Error file");
     	return -1;
 	}
-	printf(BHGRN "This is the INSPECTION console, these are the current hoist X & Z positions:" RESET "\n");
-	printf(BHMAG "Press the 'r' and then ENTER buttons for resetting the hoist position" RESET "\n");
-	printf(BHYEL "Press the 's' and then ENTER buttons for stopping the hoist movement" RESET "\n");
+
+	setup_konsole();
+
 	//printing on the log file
 	fprintf(file, "This is the LOGFILE. The following data represent the estimated hoist position\n");
-	fflush(stdout);
 
 	while(1){
 
@@ -100,12 +149,12 @@ int main(int argc, char * argv[]){
 			if(alarm == 's'){ //STOP command
 				kill(pid_motor_x, SIGUSR1); //SIGUSR1 signal has been used for STOP command
 				kill(pid_motor_z, SIGUSR1);
-				printf("\n"BHRED"Stopping..."RESET"\n");
+				// printf("\n"BHRED"Stopping..."RESET"\n");
 				}
 			if(alarm == 'r'){ //RESET command
 				kill(pid_motor_x, SIGUSR2); //SIGUSR2 signal has been used for RESET command
 				kill(pid_motor_z, SIGUSR2);
-				printf("\n"BHRED"Resetting..."RESET"\n");
+				// printf("\n"BHRED"Resetting..."RESET"\n");
 				}
 			}
 			if ( FD_ISSET(fd_from_motor_z, &rset) != 0 ){

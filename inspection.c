@@ -10,6 +10,7 @@
 #include <string.h>
 #include <ncurses.h>
 #include <math.h>
+#include <time.h>
 
 /*COLORS*/
 #define RESET "\033[0m"
@@ -63,22 +64,6 @@ void printer(float x, float z){
 
     curs_set(0);
 
-	// Print on screen dynamically with a fixed format.
-    move(26, 0);
-	// printw("\r                                               ");
-	if (x >= 0 && z >= 0){
-		printw("\rEstimated position (X, Z) = ( %.3f, %.3f) ", x, z);
-
-	} else if (x < 0 && z >= 0) {
-		printw("\rEstimated position (X, Z) = (%.3f, %.3f) ", x, z);
-
-	} else if (x >= 0 && z < 0) {
-		printw("\rEstimated position (X, Z) = ( %.3f,%.3f) ", x, z);
-
-	} else if (x < 0 && z < 0) {
-		printw("\rEstimated position (X, Z) = (%.3f,%.3f) ", x, z);
-	}
-
 	for ( int i = 5; i <= last_row; i++){
 
 	    move(i, last_col);
@@ -92,8 +77,24 @@ void printer(float x, float z){
 
 	move(row, col);
 	addch('V');
+
     last_row = row;
     last_col = col;
+
+   	// Print on screen dynamically with a fixed format.
+    move(26, 0);
+	if (x >= 0 && z >= 0){
+		printw("Estimated position (X, Z) = ( %.3f, %.3f) ", x, z);
+
+	} else if (x < 0 && z >= 0) {
+		printw("Estimated position (X, Z) = (%.3f, %.3f) ", x, z);
+
+	} else if (x >= 0 && z < 0) {
+		printw("Estimated position (X, Z) = ( %.3f,%.3f) ", x, z);
+
+	} else if (x < 0 && z < 0) {
+		printw("Estimated position (X, Z) = (%.3f,%.3f) ", x, z);
+	}
 
     curs_set(0);
 
@@ -105,9 +106,9 @@ void printer(float x, float z){
 FILE *file;
 void file_printer(float x, float z){
 	//print on a text file
-	fprintf(file, "  %.3f, %.3f  \n", x, z);
+	time_t ltime = time(NULL);
+	fprintf(file, "%.19s: %.3f, %.3f  \n", ctime( &ltime ), x, z);
 }
-
 
 /*MAIN()*/
 int main(int argc, char * argv[]){

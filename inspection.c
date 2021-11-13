@@ -30,7 +30,7 @@ void setup_konsole(){
 	addstr("Press the 'r' for resetting the hoist position\n");
 	addstr("Press the 's' for stopping the hoist movement\n");
 	addstr("\n");
-	addstr("||===================================================||\n");
+	addstr("||===================================================||---> x\n");
     addstr("||                                                   ||\n");
     addstr("||                                                   ||\n");
     addstr("||                                                   ||\n");
@@ -48,6 +48,9 @@ void setup_konsole(){
     addstr("||                                                   ||\n");
     addstr("||                                                   ||\n");
     addstr("||                                                   ||\n");
+    addstr("|\n");
+    addstr("v\n");
+    addstr("z\n");
     addstr("\n");
 
 	refresh();
@@ -75,16 +78,24 @@ void printer(float x, float z){
 	} else if (x < 0 && z < 0) {
 		printw("\rEstimated position (X, Z) = (%.3f,%.3f) ", x, z);
 	}
-	printw("last_row = %d, last col = %d      ", last_row, last_col);
 
-    move(last_row, last_col);
-    addch(' ');
+	for ( int i = 5; i <= last_row; i++){
 
-    move(row, col);
-    addch('o');
+	    move(i, last_col);
+	    addch(' ');
+	}
 
+	for ( int i = 5; i < row; i++){
+	    move(i, col);
+	    addch('|');
+	}
+
+	move(row, col);
+	addch('V');
     last_row = row;
     last_col = col;
+
+    curs_set(0);
 
     refresh();
 }

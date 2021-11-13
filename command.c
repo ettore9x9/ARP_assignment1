@@ -41,13 +41,14 @@ void interpreter(){
 
         if (c1 == 91){ 
             c2 = getchar();
+
             if(c2 == 65){ //third ASCII nummber for upwards arrow
-                printf("\n" BHYEL "Increase Z" RESET "\n");
-                write(fd_z, &cmd_increase_z, sizeof(int)); 
-            }
-            if(c2 == 66){ //third ASCII nummber for downwards arrow
                 printf("\n" BHYEL "Decrease Z" RESET "\n");
                 write(fd_z, &cmd_decrease_z, sizeof(int));    
+            }
+            if(c2 == 66){ //third ASCII nummber for downwards arrow
+                printf("\n" BHYEL "Increase Z" RESET "\n");
+                write(fd_z, &cmd_increase_z, sizeof(int)); 
             }
             if(c2 == 67){ //third ASCII nummber for right arrow
                 printf("\n" BHMAG "Increase X" RESET "\n");

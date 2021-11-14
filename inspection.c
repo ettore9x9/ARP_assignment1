@@ -11,6 +11,7 @@
 #include <ncurses.h>
 #include <math.h>
 #include <time.h>
+#include <stdbool.h>
 
 /*COLORS*/
 #define RESET "\033[0m"
@@ -33,10 +34,10 @@ void setup_konsole(){
 
 	initscr();
 
-	addstr(" ### This is the INSPECTION console ###\n");
-	addstr("\n");
-	addstr("Press 'r' for resetting the hoist position.\n");
-	addstr("Press 's' for stopping the hoist movement.\n");
+	addstr("This is the INSPECTION console.\n");
+	addstr("Press the 'r' for resetting the hoist position\n");
+	addstr("Press the 's' for stopping the hoist movement\n");
+	
 	addstr("\n");
 	addstr("||===================================================||---> x\n");
     addstr("||                                                   ||\n");
@@ -66,18 +67,18 @@ void setup_konsole(){
 
 void printer(float x, float z){
 
-	int row = floor( (z / 0.625) + 0.2 ) + 6;
+	int row = floor( (z / 0.625) + 0.2 ) + 5;
     int col = floor( (x / 0.2) + 0.2 ) + 2;
 
     curs_set(0);
 
-	for ( int i = 6; i <= last_row; i++){
+	for ( int i = 5; i <= last_row; i++){
 
 	    move(i, last_col);
 	    addch(' ');
 	}
 
-	for ( int i = 6; i < row; i++){
+	for ( int i = 5; i < row; i++){
 	    move(i, col);
 	    addch('|');
 	}
@@ -89,22 +90,22 @@ void printer(float x, float z){
     last_col = col;
 
    	// Print on screen dynamically with a fixed format.
-    move(27, 0);
+    move(26, 0);
 	if (x >= 0 && z >= 0){
-		printw("Estimated position (X, Z) = ( %.3f, %.3f) [m]\n", x, z);
+		printw("Estimated position (X, Z) = ( %.3f, %.3f)\n", x, z);
 
 	} else if (x < 0 && z >= 0) {
-		printw("Estimated position (X, Z) = (%.3f, %.3f) [m]\n", x, z);
+		printw("Estimated position (X, Z) = (%.3f, %.3f)\n", x, z);
 
 	} else if (x >= 0 && z < 0) {
-		printw("Estimated position (X, Z) = ( %.3f,%.3f) [m]\n", x, z);
+		printw("Estimated position (X, Z) = ( %.3f,%.3f)\n", x, z);
 
 	} else if (x < 0 && z < 0) {
-		printw("Estimated position (X, Z) = (%.3f,%.3f) [m]\n", x, z);
+		printw("Estimated position (X, Z) = (%.3f,%.3f)\n", x, z);
 	}
 
 	time_t ltime = time(NULL);
-	printw("Execution time = %ld [s]\n", ltime - start_time);
+	printw("Execution time = %ld\n", ltime - start_time);
 
     curs_set(0);
 
@@ -114,13 +115,17 @@ void printer(float x, float z){
 /*MAIN()*/
 int main(int argc, char * argv[]){
 	
-	int fd_from_motor_x, fd_from_motor_z; //file descriptors
+	int fd_from_motor_x, fd_from_motor_z, fd_command_pid, fd_stop; //file descriptors
 	int ret; //select() system call return value
 
 	/*process IDs*/
 	pid_t pid_motor_x = atoi(argv[1]);
 	pid_t pid_motor_z = atoi(argv[2]);
 	pid_t pid_wd = atoi(argv[3]);
+	pid_t command_pid;
+	//receive command pid
+	fd_command_pid=open("command_to_in_pid", O_RDONLY);
+	read(fd_command_pid, &command_pid, sizeof(int));
 
 	float est_pos_x, est_pos_z; // estimate hoist X and Z positions
 	char alarm; //char that will contain the 'stop' or 'reset' command
@@ -133,7 +138,6 @@ int main(int argc, char * argv[]){
 	/*opening pipes*/
 	fd_from_motor_x = open("fifo_est_pos_x", O_RDONLY);
 	fd_from_motor_z = open("fifo_est_pos_z", O_RDONLY);
-
 	log_file = fopen("Log.txt", "a"); // Open the log file
 
 	start_time = time(NULL);
@@ -155,7 +159,7 @@ int main(int argc, char * argv[]){
 		if(ret == -1){ // An error occours.
 				perror("select() on motor x\n");
 				return -2;
-			}
+		}
 
 		if( FD_ISSET(0, &rset) != 0 ){ //if the standard input receives any inputs...
 			alarm = getchar(); //get keyboard input
@@ -167,15 +171,16 @@ int main(int argc, char * argv[]){
 			fflush(log_file);
 
 			if(alarm == 's'){ //STOP command
+				//kill(command_pid, SIGUSR1);
 				kill(pid_motor_x, SIGUSR1); //SIGUSR1 signal has been used for STOP command
 				kill(pid_motor_z, SIGUSR1);
-				// printf("\n"BHRED"Stopping..."RESET"\n");
+				
 				}
 
 			if(alarm == 'r'){ //RESET command
 				kill(pid_motor_x, SIGUSR2); //SIGUSR2 signal has been used for RESET command
 				kill(pid_motor_z, SIGUSR2);
-				// printf("\n"BHRED"Resetting..."RESET"\n");
+				kill(command_pid, SIGUSR2); //alarm the command konsole that resetting started!
 				}
 			}
 
@@ -184,6 +189,9 @@ int main(int argc, char * argv[]){
 			}
 			if( FD_ISSET(fd_from_motor_x, &rset) != 0 ) { // There is something to read!			
 				read(fd_from_motor_x, &est_pos_x, sizeof(float)); // Update the command.
+			}
+			if(est_pos_x<0.0 && est_pos_z<0.0){
+				kill(command_pid, SIGUSR1); //alarm the command konsole that resetting finished!
 			}
 
 			printer(est_pos_x, est_pos_z);
@@ -199,7 +207,8 @@ int main(int argc, char * argv[]){
 	//closing pipes
 	close(fd_from_motor_x);
 	close(fd_from_motor_z);
-
+	close(fd_command_pid);
+	close(fd_stop);
 	ltime = time(NULL);
 	fprintf(log_file, "%.19s: inspection: Inspection console ended.\n", ctime( &ltime ) );
 	fflush(log_file);

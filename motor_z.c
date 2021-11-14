@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 
 /*GLOBAL VARIABLES*/
 
@@ -18,6 +19,7 @@
 float z_position = Z_LB; //the hoist has a starting position of (X, Z)=(0, 0)
 float est_pos_z = Z_LB;
 int command = 0;
+bool resetting=false;
 FILE * log_file;
 
 /*FUNCTIONS*/
@@ -30,8 +32,7 @@ void signal_handler(int sig) {
         command=5; //stop command
     }   
     if(sig==SIGUSR2){
-        z_position=0; //reset the x_position
-        command=5; //and then stop the hoist movement
+        resetting=true; 
     }
 }
 
@@ -100,22 +101,38 @@ int main(){
             fprintf(log_file, "%.19s: motor_z   : command received = %d.\n", ctime( &ltime ), command );
             fflush(log_file);
         }
-        if(command == 1){
-            if (z_position > Z_UB){ //Upper Z limit of the work envelope reached
-                command = 5; //stop command
-            } else {
-                z_position += STEP; //go upwards
-            }
-        }
-        if(command == 2){
-            if (z_position < Z_LB){ //Lower Z limit of the work envelope reached
-                command = 5; //stop command
+
+        if(!resetting){ //the system is not resetting
+            if(command == 1){
+                if (z_position > Z_UB){ //Upper Z limit of the work envelope reached
+                    command = 5; //stop command
                 } else {
-                    z_position -= STEP; //go downwards
+                    z_position += STEP; //go upwards
                 }
             }
-        if(command == 5){ //stop command
-        // z_position must not change
+            if(command == 2){
+                if (z_position < Z_LB){ //Lower Z limit of the work envelope reached
+                    command = 5; //stop command
+                    } else {
+                        z_position -= STEP; //go downwards
+                    }
+                }
+            if(command == 5){ //stop command
+            // z_position must not change
+            }
+        }
+        else{ //system is resetting
+                while(z_position>Z_LB){
+                    z_position -= STEP;
+                    est_pos_z=z_position+ float_rand(-0.005,0.005); //compute the estimated position
+                    write(fd_inspection_z, &est_pos_z, sizeof(float)); //send to inspection konsole
+                    usleep(20000);
+                }
+                if(z_position<=Z_LB){
+                    resetting=false;
+                    command=5;
+                    
+                }
         }
 
 

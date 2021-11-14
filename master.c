@@ -10,7 +10,6 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <time.h>
-#include <termios.h>
 
 // Declare PIDs of the children programs as global variables.
 pid_t pid_command, pid_motor_x, pid_motor_z, pid_inspection, pid_wd;
@@ -66,6 +65,7 @@ int main() {
     create_fifo("fifo_command_to_mot_z");
     create_fifo("fifo_est_pos_x");
     create_fifo("fifo_est_pos_z");
+    create_fifo("command_to_in_pid");
 
     // Executes all child processes.
     char * arg_list_motor_x[] = { "./motor_x", NULL, NULL };
@@ -120,6 +120,8 @@ int main() {
     unlink("fifo_command_to_mot_z");
     unlink("fifo_est_pos_x");
     unlink("fifo_est_pos_z");
+    unlink("command_to_in_pid");
+
 
     ltime = time(NULL);
     fprintf(log_file, "%.19s: Master    : End.\n", ctime( &ltime ) );

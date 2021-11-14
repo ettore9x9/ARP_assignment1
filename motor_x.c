@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 
 /*GLOBAL VARIABLES*/
 
@@ -17,6 +18,7 @@
 float x_position = X_LB; //the hoist has a starting position of (X, Z)=(0, 0)
 float est_pos_x = X_LB;
 int command = 0;
+bool resetting=false;
 FILE * log_file;
 
 /*FUNCTIONS*/
@@ -29,8 +31,7 @@ void signal_handler(int sig) {
         command = 6; //stop command
     }   
     if(sig == SIGUSR2){
-        x_position = 0; //reset the x_position
-        command = 6; //and then stop the hoist movement
+        resetting=true;
     }
 }
 
@@ -101,24 +102,42 @@ int main(){
             fflush(log_file);
         }
 
-        if(command == 3){
-            if (x_position > X_UB){ //Upper X limit of the work envelope reached
-                command = 6; //stop command
-            } else {
-                x_position += STEP; //go right
+        if(!resetting){
+            if(command == 3){
+              
+                if (x_position > X_UB){ //Upper X limit of the work envelope reached
+                    command = 6; //stop command
+                } else {
+                    x_position += STEP; //go right
+                }
+            }
+
+            if(command == 4){ 
+           
+                if (x_position < X_LB){ //Lower X limit of the work envelope reached
+                    command = 6; //stop command
+                } else {
+                    x_position -= STEP; //go left
+                }
+            }
+
+            if(command == 6){ //stop command
+            //x_position must not change
             }
         }
+        else{
+                while(x_position>X_LB){
+                    x_position -= STEP;
+                    est_pos_x=x_position+ float_rand(-0.005,0.005); //compute the estimated position
+                    write(fd_inspection_x, &est_pos_x, sizeof(float)); //send to inspection konsole
+                    usleep(20000);
+                }
+                if(x_position<=X_LB){
+                    resetting=false;
+                    command=6;
+                    
+                }
 
-        if(command == 4){ 
-            if (x_position < X_LB){ //Lower X limit of the work envelope reached
-                command = 6; //stop command
-            } else {
-                x_position -= STEP; //go left
-            }
-        }
-
-        if(command == 6){ //stop command
-        //x_position must not change
         }
 
         // Sleeps. If the command does not change, repeats again the same command.

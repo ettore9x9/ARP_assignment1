@@ -18,35 +18,44 @@
 float x_position = X_LB; //the hoist has a starting position of (X, Z)=(0, 0)
 float est_pos_x = X_LB;
 int command = 0;
-bool resetting=false;
-FILE * log_file;
+bool resetting = false;
+bool stop_pressed = false;
+FILE *log_file;
 
 /*FUNCTIONS*/
 void signal_handler(int sig);
-float float_rand( float min, float max );
+float float_rand(float min, float max);
 
-void signal_handler(int sig) {
+void signal_handler(int sig)
+{
 
-    if(sig == SIGUSR1){
+    if (sig == SIGUSR1)
+    {
         command = 6; //stop command
-    }   
-    if(sig == SIGUSR2){
-        resetting=true;
+        stop_pressed = true;
+        printf("STOPPRESSED: %d", stop_pressed);
+        fflush(stdout);
+    }
+    if (sig == SIGUSR2)
+    {
+        resetting = true;
     }
 }
 
-float float_rand( float min, float max ) {
+float float_rand(float min, float max)
+{
     // Function to generate a randomic error.
-    float scale = rand() / (float) RAND_MAX;
-    return min + scale * ( max - min );      /* [min, max] */
+    float scale = rand() / (float)RAND_MAX;
+    return min + scale * (max - min); /* [min, max] */
 }
 
 /*MAIN()*/
 
-int main(){
+int main()
+{
 
     int fd_x, fd_inspection_x; //file descriptors
-    int ret; //select() system call return value
+    int ret;                   //select() system call return value
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &signal_handler;
@@ -54,15 +63,17 @@ int main(){
 
     struct sigaction sa2;
     memset(&sa2, 0, sizeof(sa2));
-    sa2.sa_handler =&signal_handler;
-    sa2.sa_flags=SA_RESTART;
+    sa2.sa_handler = &signal_handler;
+    sa2.sa_flags = SA_RESTART;
 
     //sigaction for SIGUSR1 & SIGUSR2
-    if(sigaction(SIGUSR1,&sa,NULL)==-1){
+    if (sigaction(SIGUSR1, &sa, NULL) == -1)
+    {
         perror("Sigaction error, SIGUSR1 motor x\n");
         return -6;
     }
-    if(sigaction(SIGUSR2,&sa2,NULL)==-1){
+    if (sigaction(SIGUSR2, &sa2, NULL) == -1)
+    {
         perror("Sigaction error, SIGUSR2 motor x");
         return -7;
     }
@@ -70,7 +81,7 @@ int main(){
     log_file = fopen("Log.txt", "a"); // Open the log file
 
     time_t ltime = time(NULL);
-    fprintf(log_file, "%.19s: motor_x   : Motor x started.\n", ctime( &ltime ) );
+    fprintf(log_file, "%.19s: motor_x   : Motor x started.\n", ctime(&ltime));
     fflush(log_file);
 
     fd_set rset; //ready set of file descriptors
@@ -82,70 +93,84 @@ int main(){
 
     //opening pipes
     fd_x = open("fifo_command_to_mot_x", O_RDONLY);
-    fd_inspection_x=open("fifo_est_pos_x", O_WRONLY);
+    fd_inspection_x = open("fifo_est_pos_x", O_WRONLY);
 
-    while(1){
+    while (1)
+    {
         FD_ZERO(&rset);
         FD_SET(fd_x, &rset);
 
         ret = select(FD_SETSIZE, &rset, NULL, NULL, &tv);
 
-        if(ret == -1){ // An error occours.
+        if (ret == -1)
+        { // An error occours.
             perror("select() on motor x\n");
             return -8;
         }
-        else if( FD_ISSET(fd_x, &rset) != 0 ){ // There is something to read!
+        else if (FD_ISSET(fd_x, &rset) != 0)
+        {                                      // There is something to read!
             read(fd_x, &command, sizeof(int)); // Update the command.
 
             ltime = time(NULL);
-            fprintf(log_file, "%.19s: motor_x   : command received = %d.\n", ctime( &ltime ), command );
+            fprintf(log_file, "%.19s: motor_x   : command received = %d.\n", ctime(&ltime), command);
             fflush(log_file);
         }
 
-        if(!resetting){
-            if(command == 3){
-              
-                if (x_position > X_UB){ //Upper X limit of the work envelope reached
+        if (!resetting)
+        {
+            if (command == 3)
+            {
+
+                if (x_position > X_UB)
+                {                //Upper X limit of the work envelope reached
                     command = 6; //stop command
-                } else {
+                }
+                else
+                {
                     x_position += STEP; //go right
                 }
             }
 
-            if(command == 4){ 
-           
-                if (x_position < X_LB){ //Lower X limit of the work envelope reached
+            if (command == 4)
+            {
+
+                if (x_position < X_LB)
+                {                //Lower X limit of the work envelope reached
                     command = 6; //stop command
-                } else {
+                }
+                else
+                {
                     x_position -= STEP; //go left
                 }
             }
 
-            if(command == 6){ //stop command
-            //x_position must not change
+            if (command == 6)
+            { //stop command
+                //x_position must not change
             }
         }
-        else{
-                while(x_position>X_LB){
-                    x_position -= STEP;
-                    est_pos_x=x_position+ float_rand(-0.005,0.005); //compute the estimated position
-                    write(fd_inspection_x, &est_pos_x, sizeof(float)); //send to inspection konsole
-                    usleep(20000);
-                }
-                if(x_position<=X_LB){
-                    resetting=false;
-                    command=6;
-                    
-                }
-
+        else
+        {
+            if (!stop_pressed && x_position > X_LB)
+            {
+                x_position -= STEP;
+            }
+            else
+            {
+                resetting = false;
+                stop_pressed = false;
+                printf("nfjknfkjnfek, %d", stop_pressed);
+                //command = 0;
+            }
+            stop_pressed = false;
         }
 
         // Sleeps. If the command does not change, repeats again the same command.
-        est_pos_x=x_position+ float_rand(-0.005,0.005); //compute the estimated position
-        write(fd_inspection_x, &est_pos_x, sizeof(float)); //send to inspection konsole
+        est_pos_x = x_position + float_rand(-0.005, 0.005); //compute the estimated position
+        write(fd_inspection_x, &est_pos_x, sizeof(float));  //send to inspection konsole
 
         ltime = time(NULL);
-        fprintf(log_file, "%.19s: motor_x   : x_position = %f\n", ctime( &ltime ), x_position);
+        fprintf(log_file, "%.19s: motor_x   : x_position = %f\n", ctime(&ltime), x_position);
         fflush(log_file);
 
         usleep(20000); //sleep for 0,2 second
@@ -157,7 +182,7 @@ int main(){
     close(fd_inspection_x);
 
     ltime = time(NULL);
-    fprintf(log_file, "%.19s: motor_x   : Motor x ended.\n", ctime( &ltime ) );
+    fprintf(log_file, "%.19s: motor_x   : Motor x ended.\n", ctime(&ltime));
     fflush(log_file);
     fclose(log_file); // Close log file.
 

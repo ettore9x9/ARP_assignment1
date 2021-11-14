@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <termios.h>
 
 // Declare PIDs of the children programs as global variables.
 pid_t pid_command, pid_motor_x, pid_motor_z, pid_inspection, pid_wd;

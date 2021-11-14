@@ -49,11 +49,11 @@ void interpreter(){
             c2 = getchar();
 
             if(c2 == 65){ //third ASCII nummber for upwards arrow
-                printf("\n" BHYEL "Decrease Z" RESET "\n");
+                printf("\n" BHMAG "Decrease Z" RESET "\n");
                 write(fd_z, &cmd_decrease_z, sizeof(int));    
             }
             if(c2 == 66){ //third ASCII nummber for downwards arrow
-                printf("\n" BHYEL "Increase Z" RESET "\n");
+                printf("\n" BHMAG "Increase Z" RESET "\n");
                 write(fd_z, &cmd_increase_z, sizeof(int)); 
             }
             if(c2 == 67){ //third ASCII nummber for right arrow
@@ -106,11 +106,11 @@ int main(int argc, char * argv[]){
     fprintf(log_file, "%.19s: command   : Command console started\n", ctime( &ltime ) );
     fflush(log_file);
 
-    printf(BHGRN "This is the COMMAND console: you can use the following commands: " RESET "\n");
-    printf(BHMAG "Press the upwards Arrow for moving the hoist upwards" RESET "\n");
-    printf(BHMAG "Press the downwards Arrow for moving the hoist downwards" RESET "\n");
-    printf(BHYEL "Press 'X' for stopping the horizontal movement" RESET "\n");
-    printf(BHYEL "Press 'Z' for stopping the vertical movement" RESET "\n");  
+    printf(" ### This is the COMMAND console ### \n\n");
+    printf(BHGRN "You can use the following commands: " RESET "\n");
+    printf(BHMAG "Press arrows to move the hoist with constant speed." RESET "\n");
+    printf(BHYEL "Press 'x' for stopping the horizontal movement." RESET "\n");
+    printf(BHYEL "Press 'z' for stopping the vertical movement." RESET "\n");  
     fflush(stdout); 
 
     //opening pipes

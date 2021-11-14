@@ -33,9 +33,10 @@ void setup_konsole(){
 
 	initscr();
 
-	addstr("This is the INSPECTION console.\n");
-	addstr("Press the 'r' for resetting the hoist position\n");
-	addstr("Press the 's' for stopping the hoist movement\n");
+	addstr(" ### This is the INSPECTION console ###\n");
+	addstr("\n");
+	addstr("Press 'r' for resetting the hoist position.\n");
+	addstr("Press 's' for stopping the hoist movement.\n");
 	addstr("\n");
 	addstr("||===================================================||---> x\n");
     addstr("||                                                   ||\n");
@@ -65,18 +66,18 @@ void setup_konsole(){
 
 void printer(float x, float z){
 
-	int row = floor( (z / 0.625) + 0.2 ) + 5;
+	int row = floor( (z / 0.625) + 0.2 ) + 6;
     int col = floor( (x / 0.2) + 0.2 ) + 2;
 
     curs_set(0);
 
-	for ( int i = 5; i <= last_row; i++){
+	for ( int i = 6; i <= last_row; i++){
 
 	    move(i, last_col);
 	    addch(' ');
 	}
 
-	for ( int i = 5; i < row; i++){
+	for ( int i = 6; i < row; i++){
 	    move(i, col);
 	    addch('|');
 	}
@@ -88,22 +89,22 @@ void printer(float x, float z){
     last_col = col;
 
    	// Print on screen dynamically with a fixed format.
-    move(26, 0);
+    move(27, 0);
 	if (x >= 0 && z >= 0){
-		printw("Estimated position (X, Z) = ( %.3f, %.3f)\n", x, z);
+		printw("Estimated position (X, Z) = ( %.3f, %.3f) [m]\n", x, z);
 
 	} else if (x < 0 && z >= 0) {
-		printw("Estimated position (X, Z) = (%.3f, %.3f)\n", x, z);
+		printw("Estimated position (X, Z) = (%.3f, %.3f) [m]\n", x, z);
 
 	} else if (x >= 0 && z < 0) {
-		printw("Estimated position (X, Z) = ( %.3f,%.3f)\n", x, z);
+		printw("Estimated position (X, Z) = ( %.3f,%.3f) [m]\n", x, z);
 
 	} else if (x < 0 && z < 0) {
-		printw("Estimated position (X, Z) = (%.3f,%.3f)\n", x, z);
+		printw("Estimated position (X, Z) = (%.3f,%.3f) [m]\n", x, z);
 	}
 
 	time_t ltime = time(NULL);
-	printw("Execution time = %ld\n", ltime - start_time);
+	printw("Execution time = %ld [s]\n", ltime - start_time);
 
     curs_set(0);
 

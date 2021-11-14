@@ -33,6 +33,7 @@ FILE *log_file;
 
 /*FUNCTIONS*/
 
+void signal_handler(int sig);
 void interpreter();
 
 void signal_handler(int sig)
@@ -41,11 +42,12 @@ void signal_handler(int sig)
     if (sig == SIGUSR1)
     {
         resetting = false;
+        printf(BHRED "...MOTORS STOPPED..." RESET "\n");
     }
     if (sig == SIGUSR2)
     {
         resetting = true;
-        printf(BHRED "RESETTING!" RESET "\n");
+        printf(BHRED "...RESETTING..." RESET "\n");
         fflush(stdout);
     }
 }
@@ -55,68 +57,71 @@ void interpreter()
 
     int c, c1, c2;
     c = getchar();         //get input from keyboard
-    kill(pid_wd, SIGTSTP); // Send a signal to let the watchdog know that an input occurred.
 
-    time_t ltime = time(NULL);
-    fprintf(log_file, "%.19s: command   : Input received.\n", ctime(&ltime));
-    fflush(log_file);
+    if (c != 120 && c != 122 && c != 27) { // The input is not a command.
+        printf(BHMAG "Please, use the commands above." RESET "\n");
 
-    if (resetting)
-    {
-        if (c != 0)
-        { //ASCII number for 's' key
-            printf(BHRED "THE SYSTEM IS STILL RESETTING!" RESET "\n");
-            fflush(stdout);
-        }
-    }
-    else
-    {
-        if (c == 27)
-        { //the ASCII numbers for arrows is a combination of three numbers, the first two (27 and 91) are always the same
-            c1 = getchar();
+    } else {
+        kill(pid_wd, SIGTSTP); // Send a signal to let the watchdog know that an input occurred.
 
-            if (c1 == 91)
+        time_t ltime = time(NULL);
+        fprintf(log_file, "%.19s: command   : Input received.\n", ctime(&ltime));
+        fflush(log_file);
+
+        if (!resetting)
+        {
+            if (c == 27)
+            { //the ASCII numbers for arrows is a combination of three numbers, the first two (27 and 91) are always the same
+                c1 = getchar();
+
+                if (c1 == 91)
+                {
+                    c2 = getchar();
+
+                    if (c2 == 65)
+                    { //third ASCII nummber for upwards arrow
+                        printf("\n" BHYEL "Decrease Z" RESET "\n");
+                        write(fd_z, &cmd_decrease_z, sizeof(int));
+                    }
+                    if (c2 == 66)
+                    { //third ASCII nummber for downwards arrow
+                        printf("\n" BHYEL "Increase Z" RESET "\n");
+                        write(fd_z, &cmd_increase_z, sizeof(int));
+                    }
+                    if (c2 == 67)
+                    { //third ASCII nummber for right arrow
+                        printf("\n" BHMAG "Increase X" RESET "\n");
+                        write(fd_x, &cmd_increase_x, sizeof(int));
+                    }
+                    if (c2 == 68)
+                    { //third ASCII nummber for left arrow
+                        printf("\n" BHMAG "Decrease X" RESET "\n");
+                        write(fd_x, &cmd_decrease_x, sizeof(int));
+                    }
+                }
+            }
+            else
             {
-                c2 = getchar();
+                if (c == 120)
+                { //ASCII number for 'x' keyboard key
+                    printf("\n" BHRED "X stop" RESET "\n");
+                    write(fd_x, &cmd_stop_x, sizeof(int));
+                }
+                if (c == 122)
+                { //ASCII number for 'z' keyboard key
+                    printf("\n" BHRED "Z stop" RESET "\n");
+                    write(fd_z, &cmd_stop_z, sizeof(int));
+                }
+            }
 
-                if (c2 == 65)
-                { //third ASCII nummber for upwards arrow
-                    printf("\n" BHYEL "Decrease Z" RESET "\n");
-                    write(fd_z, &cmd_decrease_z, sizeof(int));
-                }
-                if (c2 == 66)
-                { //third ASCII nummber for downwards arrow
-                    printf("\n" BHYEL "Increase Z" RESET "\n");
-                    write(fd_z, &cmd_increase_z, sizeof(int));
-                }
-                if (c2 == 67)
-                { //third ASCII nummber for right arrow
-                    printf("\n" BHMAG "Increase X" RESET "\n");
-                    write(fd_x, &cmd_increase_x, sizeof(int));
-                }
-                if (c2 == 68)
-                { //third ASCII nummber for left arrow
-                    printf("\n" BHMAG "Decrease X" RESET "\n");
-                    write(fd_x, &cmd_decrease_x, sizeof(int));
-                }
+        } else {
+            if ( c == 27 ) {
+                getchar();
+                getchar();
             }
-        }
-        else
-        {
-            if (c == 120)
-            { //ASCII number for 'x' keyboard key
-                printf("\n" BHRED "X stop" RESET "\n");
-                write(fd_x, &cmd_stop_x, sizeof(int));
-            }
-            if (c == 122)
-            { //ASCII number for 'z' keyboard key
-                printf("\n" BHRED "Z stop" RESET "\n");
-                write(fd_z, &cmd_stop_z, sizeof(int));
-            }
-        }
-        if (c != 120 && c != 122 && c != 27)
-        {
-            printf(BHMAG "Please, use the commands above!" RESET "\n");
+
+            printf(BHRED "Please, wait the end of the resetting." RESET "\n");
+            fflush(stdout);
         }
     }
 }

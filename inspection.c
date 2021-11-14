@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
 				kill(command_pid, SIGUSR1); // enable input from keyboard
 				kill(pid_motor_x, SIGUSR1); //SIGUSR1 signal has been used for STOP command
 				kill(pid_motor_z, SIGUSR1);
+				alarm = '0';
 			}
 
 			if (alarm == 'r')
@@ -199,15 +200,16 @@ int main(int argc, char *argv[])
 
 		if (FD_ISSET(fd_from_motor_z, &rset) != 0)
 		{
-			read(fd_from_motor_z, &est_pos_z, sizeof(float)); // Update the command.
+			read(fd_from_motor_z, &est_pos_z, sizeof(float));
 		}
 		if (FD_ISSET(fd_from_motor_x, &rset) != 0)
-		{													  // There is something to read!
-			read(fd_from_motor_x, &est_pos_x, sizeof(float)); // Update the command.
-		}
-		if (est_pos_x < 0.0 && est_pos_z < 0.0)
 		{
-			kill(command_pid, SIGUSR1); //alarm the command konsole that resetting finished!
+			read(fd_from_motor_x, &est_pos_x, sizeof(float));
+		}
+		if ( (est_pos_x < 0.001) && (est_pos_z < 0.001) && (alarm == 'r') )
+		{
+			kill(command_pid, SIGUSR1); //alarm the command konsole that resetting has finished!
+			alarm = 's';
 		}
 
 		printer(est_pos_x, est_pos_z);

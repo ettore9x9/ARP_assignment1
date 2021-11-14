@@ -38,6 +38,7 @@ void signal_handler(int sig)
     }
     if (sig == SIGUSR2)
     {
+        stop_pressed = false;
         resetting = true;
     }
 }
@@ -157,7 +158,7 @@ int main()
             {
                 resetting = false;
                 stop_pressed = false;
-                //command = 0;
+                command = 0;
             }
             stop_pressed = false;
         }

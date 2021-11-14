@@ -33,11 +33,11 @@ void signal_handler(int sig)
     {
         command = 6; //stop command
         stop_pressed = true;
-        printf("STOPPRESSED: %d", stop_pressed);
         fflush(stdout);
     }
     if (sig == SIGUSR2)
     {
+        stop_pressed = false;
         resetting = true;
     }
 }
@@ -149,18 +149,16 @@ int main()
                 //x_position must not change
             }
         }
-        else
+        else // The motor is resetting.
         {
-            if (!stop_pressed && x_position > X_LB)
+            if ( (!stop_pressed) && (x_position > X_LB) )
             {
                 x_position -= STEP;
             }
             else
             {
                 resetting = false;
-                stop_pressed = false;
-                printf("nfjknfkjnfek, %d", stop_pressed);
-                //command = 0;
+                command = 0;
             }
             stop_pressed = false;
         }

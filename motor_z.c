@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <time.h>
 
 /*GLOBAL VARIABLES*/
 
@@ -17,8 +18,11 @@
 float z_position = Z_LB; //the hoist has a starting position of (X, Z)=(0, 0)
 float est_pos_z = Z_LB;
 int command = 0;
+FILE * log_file;
 
 /*FUNCTIONS*/
+void signal_handler(int sig);
+float float_rand( float min, float max );
 
 void signal_handler(int sig) {
 
@@ -53,6 +57,7 @@ int main(){
     memset(&sa2, 0, sizeof(sa2));
     sa2.sa_handler =&signal_handler;
     sa2.sa_flags=SA_RESTART;
+
     //sigaction for SIGUSR1 & SIGUSR2
     if(sigaction(SIGUSR1,&sa,NULL)==-1){
         perror("Sigaction error, SIGUSR1 on motor z\n");
@@ -62,6 +67,12 @@ int main(){
         perror("Sigaction error, SIGUSR2 on motor z\n");
         return -11;
     }
+
+    log_file = fopen("Log.txt", "a"); // Open the log file
+
+    time_t ltime = time(NULL);
+    fprintf(log_file, "%.19s: motor_z   : Motor z started.\n", ctime( &ltime ) );
+    fflush(log_file);
 
     fd_set rset; //ready set of file descriptors
 
@@ -85,6 +96,9 @@ int main(){
         }
         else if(FD_ISSET(fd_z, &rset) != 0){ // There is something to read!
             read(fd_z, &command, sizeof(int)); // Update the command.
+            ltime = time(NULL);
+            fprintf(log_file, "%.19s: motor_z   : command received = %d.\n", ctime( &ltime ), command );
+            fflush(log_file);
         }
         if(command == 1){
             if (z_position > Z_UB){ //Upper Z limit of the work envelope reached
@@ -108,12 +122,23 @@ int main(){
         // Sleeps. If the command does not change, than repeats again the same command.
         est_pos_z=z_position + float_rand(-0.005,0.005); //compute the estimated position
         write(fd_inspection_z, &est_pos_z, sizeof(float)); //send to inspection konsole
+
+        ltime = time(NULL);
+        fprintf(log_file, "%.19s: motor_z   : z_position = %f\n", ctime( &ltime ), z_position);
+        fflush(log_file);
+
         usleep(20000);
 
     } // End of the while cycle.
+
     //closing pipes
     close(fd_z);
     close(fd_inspection_z);
+
+    ltime = time(NULL);
+    fprintf(log_file, "%.19s: motor_x   : Motor z ended.\n", ctime( &ltime ) );
+    fflush(log_file);
+    fclose(log_file); // Close log file.
 
     return 0;
 }

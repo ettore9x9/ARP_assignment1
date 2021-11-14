@@ -9,11 +9,17 @@
 #include <signal.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <time.h>
 
 // Declare PIDs of the children programs as global variables.
 pid_t pid_command, pid_motor_x, pid_motor_z, pid_inspection, pid_wd;
+
 int wstatus;
+FILE * log_file;
+
 /*FUNCTIONS*/
+int spawn(const char * program, char ** arg_list);
+void create_fifo (const char * name);
 
 int spawn(const char * program, char ** arg_list) {
     // Function to generate a child process, it returns the PID of the child.
@@ -30,7 +36,7 @@ int spawn(const char * program, char ** arg_list) {
     }
 }
 
-void create_fifo (const char * name){
+void create_fifo (const char * name) {
 
     if(mkfifo(name, 0666)==-1){
         if (errno != EEXIST){
@@ -42,6 +48,17 @@ void create_fifo (const char * name){
 
 /*MAIN()*/
 int main() {
+
+    // Create a log file
+    log_file = fopen("Log.txt", "w");
+    if(!log_file){
+        perror("Error file");
+        return -1;
+    }
+
+    time_t ltime = time(NULL);
+    fprintf(log_file, "%.19s: Master    : Log file created by master process.\n", ctime( &ltime ) );
+    fflush(log_file);
 
     // Creates all named pipes for communications.
     create_fifo("fifo_command_to_mot_x");
@@ -74,10 +91,19 @@ int main() {
     char * arg_list_insp[] = { "/usr/bin/konsole",  "-e", "./inspection", pid_motor_x_char, pid_motor_z_char, pid_wd_char ,(char*)NULL };
     pid_inspection = spawn("/usr/bin/konsole", arg_list_insp);
 
+    ltime = time(NULL);
+    fprintf(log_file, "%.19s: Master    : Created all processes.\n", ctime( &ltime ) );
+    fflush(log_file);
+
     //wait for child processes 
     wait(&wstatus);
+
+    ltime = time(NULL);
+    fprintf(log_file, "%.19s: Master    : Child process terminated.\n", ctime( &ltime ) );
+    fflush(log_file);
+
     if(WIFEXITED(wstatus)){
-        int status=WEXITSTATUS(wstatus);
+        int status = WEXITSTATUS(wstatus);
         if(status<0){ //if any of child processes returns a negative number kill all of them!
             printf("Negative number occured\n");
             kill(pid_command, SIGKILL);
@@ -85,7 +111,7 @@ int main() {
             kill(pid_wd, SIGKILL);
             kill(pid_motor_x, SIGKILL);
             kill(pid_motor_z, SIGKILL);
-    }
+        }
     }
 
     // Deletes named pipes.
@@ -93,6 +119,12 @@ int main() {
     unlink("fifo_command_to_mot_z");
     unlink("fifo_est_pos_x");
     unlink("fifo_est_pos_z");
+
+    ltime = time(NULL);
+    fprintf(log_file, "%.19s: Master    : End.\n", ctime( &ltime ) );
+    fflush(log_file);
+
+    fclose(log_file); // Close log file.
 
     return 0;
 

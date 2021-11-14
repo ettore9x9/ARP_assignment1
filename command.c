@@ -8,10 +8,9 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
-#include<stdio.h>
-#include <termios.h>  
+#include <termios.h> 
+#include <time.h> 
 
-/*COLORS*/
 /*COLORS*/
 #define RESET "\033[0m"
 #define BHRED "\e[1;91m"
@@ -28,13 +27,20 @@ const int cmd_stop_z = 5; //this represents the "STOP Z" command
 const int cmd_stop_x = 6; //this represents the "STOP X" command
 int fd_x, fd_z; //file descriptors
 pid_t pid_wd; //process ID
+FILE * log_file;
 
 /*FUNCTIONS*/
+void interpreter();
+
 void interpreter(){
 
     int c, c1, c2;
     c = getchar(); //get input from keyboard
     kill(pid_wd, SIGTSTP); // Send a signal to let the watchdog know that an input occurred.
+
+    time_t ltime = time(NULL);
+    fprintf(log_file, "%.19s: command   : Input received.\n", ctime( &ltime ) );
+    fflush(log_file);
 
     if(c == 27){ //the ASCII numbers for arrows is a combination of three numbers, the first two (27 and 91) are always the same
         c1 = getchar();
@@ -94,6 +100,12 @@ int main(int argc, char * argv[]){
     TCSANOW tells tcsetattr to change attributes immediately. */
     tcsetattr( STDIN_FILENO, TCSANOW, &newt);
 
+    log_file = fopen("Log.txt", "a"); // Open the log file
+
+    time_t ltime = time(NULL);
+    fprintf(log_file, "%.19s: command   : Command console started\n", ctime( &ltime ) );
+    fflush(log_file);
+
     printf(BHGRN "This is the COMMAND console: you can use the following commands: " RESET "\n");
     printf(BHMAG "Press the upwards Arrow for moving the hoist upwards" RESET "\n");
     printf(BHMAG "Press the downwards Arrow for moving the hoist downwards" RESET "\n");
@@ -115,6 +127,12 @@ int main(int argc, char * argv[]){
 
     /*restore the old settings*/
     tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
+
+    ltime = time(NULL);
+    fprintf(log_file, "%.19s: command   : Command console ended\n", ctime( &ltime ) );
+    fflush(log_file);
+
+    fclose(log_file); // Close log file.
 
     return 0;
 }

@@ -20,6 +20,8 @@ FILE * log_file;
 void signal_handler(int sig);
 
 void signal_handler(int sig) {
+    /* Function to handle the SIGTSTP signel. */
+
     if(sig==SIGTSTP){
         timer=PERIOD; //update the timer variable
     }   

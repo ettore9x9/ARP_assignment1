@@ -1,4 +1,4 @@
-/*LIBRARIES*/
+/* LIBRARIES */
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -11,18 +11,19 @@
 #include <sys/wait.h>
 #include <time.h>
 
-// Declare PIDs of the children programs as global variables.
-pid_t pid_command, pid_motor_x, pid_motor_z, pid_inspection, pid_wd;
-
+/* GLOBAL VARIABLES */
+pid_t pid_command, pid_motor_x, pid_motor_z, pid_inspection, pid_wd; // PIDs of child programs.
 int wstatus;
-FILE * log_file;
+FILE * log_file; // Log file.
 
-/*FUNCTIONS*/
+/* FUNCTIONS HEADERS */
 int spawn(const char * program, char ** arg_list);
 void create_fifo (const char * name);
+void logPrint ( char * string);
 
+/* FUNCTIONS */
 int spawn(const char * program, char ** arg_list) {
-    // Function to generate a child process, it returns the PID of the child.
+    /* Function to generate a child process, it returns the PID of the child. */
 
     pid_t child_pid = fork();
     if (child_pid != 0) // Father process.
@@ -30,35 +31,43 @@ int spawn(const char * program, char ** arg_list) {
 
     else { // Child process.
         execvp (program, arg_list);
-
         perror("exec failed");  // If it's executed, an error occurred.
-    return -4;
+        return -4;
     }
 }
 
 void create_fifo (const char * name) {
+    /* Function to generate a named pipe. */
 
-    if(mkfifo(name, 0666)==-1){
-        if (errno != EEXIST){
+    if(mkfifo(name, 0666) == -1){
+
+        if (errno != EEXIST){ // Error management for mkfifo.
           perror("Error creating named fifo\n");
           exit(-5);
         }
     }
 }
 
-/*MAIN()*/
+void logPrint ( char * string) {
+    /* Function to print on log file adding time stamps. */
+
+    time_t ltime = time(NULL);
+    fprintf( log_file, "%.19s: %s", ctime( &ltime ), string );
+    fflush(log_file);
+}
+
+/* MAIN */
 int main() {
 
-    // Create a log file
-    log_file = fopen("Log.txt", "w");
-    if(!log_file){
+    /* Creates a log file */
+    log_file = fopen("Log.txt", "w"); // Create the file Log.txt, if the file already exists, overwrites it.
+
+    if(!log_file){ // Error management for fopen.
         perror("Error file");
         return -1;
     }
 
-    time_t ltime = time(NULL);
-    fprintf(log_file, "%.19s: Master    : Log file created by master process.\n", ctime( &ltime ) );
-    fflush(log_file);
+    logPrint("Master    : Log file created by master process.\n");
 
     // Creates all named pipes for communications.
     create_fifo("fifo_command_to_mot_x");
@@ -67,14 +76,14 @@ int main() {
     create_fifo("fifo_est_pos_z");
     create_fifo("command_to_in_pid");
 
-    // Executes all child processes.
+    /* Executes all child processes. */
     char * arg_list_motor_x[] = { "./motor_x", NULL, NULL };
     pid_motor_x = spawn("./motor_x", arg_list_motor_x);
 
     char * arg_list_motor_z[] = { "./motor_z", NULL, NULL };
     pid_motor_z = spawn("./motor_z", arg_list_motor_z);
 
-    // Turn motors' PIDs into strings.
+    /* Turns motors' PIDs into strings. */
     char pid_motor_x_char[20];
     char pid_motor_z_char[20];
     sprintf(pid_motor_x_char, "%d", pid_motor_x); 
@@ -92,16 +101,12 @@ int main() {
     char * arg_list_insp[] = { "/usr/bin/konsole",  "-e", "./inspection", pid_motor_x_char, pid_motor_z_char, pid_wd_char ,(char*)NULL };
     pid_inspection = spawn("/usr/bin/konsole", arg_list_insp);
 
-    ltime = time(NULL);
-    fprintf(log_file, "%.19s: Master    : Created all processes.\n", ctime( &ltime ) );
-    fflush(log_file);
+    logPrint("Master    : Created all processes.\n");
 
-    //wait for child processes 
+    /* Waits for child processes. */ 
     wait(&wstatus);
 
-    ltime = time(NULL);
-    fprintf(log_file, "%.19s: Master    : Child process terminated.\n", ctime( &ltime ) );
-    fflush(log_file);
+    logPrint("Master    : Child process terminated.\n");
 
     if(WIFEXITED(wstatus)){
         int status = WEXITSTATUS(wstatus);
@@ -115,7 +120,7 @@ int main() {
         }
     }
 
-    // Deletes named pipes.
+    /* Deletes named pipes. */
     unlink("fifo_command_to_mot_x");
     unlink("fifo_command_to_mot_z");
     unlink("fifo_est_pos_x");
@@ -123,11 +128,9 @@ int main() {
     unlink("command_to_in_pid");
 
 
-    ltime = time(NULL);
-    fprintf(log_file, "%.19s: Master    : End.\n", ctime( &ltime ) );
-    fflush(log_file);
+    logPrint("Master    : End.\n");
 
-    fclose(log_file); // Close log file.
+    fclose(log_file); // Closes log file.
 
     return 0;
 

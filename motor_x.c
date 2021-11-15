@@ -1,4 +1,4 @@
-/*LIBRARIES*/
+/* LIBRARIES */
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -10,33 +10,33 @@
 #include <time.h>
 #include <stdbool.h>
 
-/*GLOBAL VARIABLES*/
+/* CONSTANTS */
+#define X_UB 9.9   // Upper bound of x axes.
+#define X_LB 0     // Lower bound of x axes.
+#define STEP 0.01  // Velocity of the motor.
 
-#define X_UB 9.9
-#define X_LB 0
-#define STEP 0.01
-float x_position = X_LB; //the hoist has a starting position of (X, Z)=(0, 0)
-float est_pos_x = X_LB;
-int command = 0;
-bool resetting = false;
-bool stop_pressed = false;
-FILE *log_file;
+/* GLOBAL VARIABLES */
+float x_position = X_LB;   // Real position of the x motor.
+float est_pos_x = X_LB;    // Estimated position of the x motor.
+int command = 0;           // Command received.
+bool resetting = false;    // Boolean variable for reset the motor.
+bool stop_pressed = false; // Boolean variable for stop the motor.
+FILE *log_file;            // Log file.
 
-/*FUNCTIONS*/
+/* FUNCTIONS HEADERS */
 void signal_handler(int sig);
 float float_rand(float min, float max);
+void logPrint ( char * string);
 
-void signal_handler(int sig)
-{
+/* FUNCTIONS */
+void signal_handler(int sig) {
+    /* Function to handle stop and reset signals. */
 
-    if (sig == SIGUSR1)
-    {
+    if (sig == SIGUSR1) { // SIGUSR1 is the signal to stop the motor.
         command = 6; //stop command
         stop_pressed = true;
-        fflush(stdout);
     }
-    if (sig == SIGUSR2)
-    {
+    if (sig == SIGUSR2){ // SIGUSR2 is the signal to reset the motor.
         stop_pressed = false;
         resetting = true;
     }
@@ -49,13 +49,21 @@ float float_rand(float min, float max)
     return min + scale * (max - min); /* [min, max] */
 }
 
+void logPrint ( char * string) {
+    /* Function to print on log file adding time stamps. */
+
+    time_t ltime = time(NULL);
+    fprintf( log_file, "%.19s: %s", ctime( &ltime ), string );
+    fflush(log_file);
+}
+
 /*MAIN()*/
 
 int main()
 {
 
     int fd_x, fd_inspection_x; //file descriptors
-    int ret;                   //select() system call return value
+    int ret; //select() system call return value
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &signal_handler;
@@ -63,26 +71,22 @@ int main()
 
     struct sigaction sa2;
     memset(&sa2, 0, sizeof(sa2));
-    sa2.sa_handler = &signal_handler;
-    sa2.sa_flags = SA_RESTART;
+    sa2.sa_handler =&signal_handler;
+    sa2.sa_flags=SA_RESTART;
 
     //sigaction for SIGUSR1 & SIGUSR2
-    if (sigaction(SIGUSR1, &sa, NULL) == -1)
-    {
+    if(sigaction(SIGUSR1,&sa,NULL)==-1){
         perror("Sigaction error, SIGUSR1 motor x\n");
         return -6;
     }
-    if (sigaction(SIGUSR2, &sa2, NULL) == -1)
-    {
+    if(sigaction(SIGUSR2,&sa2,NULL)==-1){
         perror("Sigaction error, SIGUSR2 motor x");
         return -7;
     }
 
     log_file = fopen("Log.txt", "a"); // Open the log file
 
-    time_t ltime = time(NULL);
-    fprintf(log_file, "%.19s: motor_x   : Motor x started.\n", ctime(&ltime));
-    fflush(log_file);
+    logPrint("motor_x   : Motor x started.\n");
 
     fd_set rset; //ready set of file descriptors
 
@@ -93,7 +97,7 @@ int main()
 
     //opening pipes
     fd_x = open("fifo_command_to_mot_x", O_RDONLY);
-    fd_inspection_x = open("fifo_est_pos_x", O_WRONLY);
+    fd_inspection_x=open("fifo_est_pos_x", O_WRONLY);
 
     while (1)
     {
@@ -111,9 +115,9 @@ int main()
         {                                      // There is something to read!
             read(fd_x, &command, sizeof(int)); // Update the command.
 
-            ltime = time(NULL);
-            fprintf(log_file, "%.19s: motor_x   : command received = %d.\n", ctime(&ltime), command);
-            fflush(log_file);
+            char str[50];
+            sprintf(str, "motor_x   : command received = %d.", command);
+            logPrint(str);
         }
 
         if (!resetting)
@@ -167,21 +171,20 @@ int main()
         est_pos_x = x_position + float_rand(-0.005, 0.005); //compute the estimated position
         write(fd_inspection_x, &est_pos_x, sizeof(float));  //send to inspection konsole
 
-        ltime = time(NULL);
-        fprintf(log_file, "%.19s: motor_x   : x_position = %f\n", ctime(&ltime), x_position);
-        fflush(log_file);
+        char str[50];
+        sprintf(str, "motor_x   : x_position = %f\n", x_position);
+        logPrint(str);
 
         usleep(20000); //sleep for 0,2 second
 
     } // End of the while cycle.
 
-    //closing pipes
+    /* Close pipes. */
     close(fd_x);
     close(fd_inspection_x);
 
-    ltime = time(NULL);
-    fprintf(log_file, "%.19s: motor_x   : Motor x ended.\n", ctime(&ltime));
-    fflush(log_file);
+    logPrint("motor_x   : Motor x ended.\n");
+
     fclose(log_file); // Close log file.
 
     return 0;

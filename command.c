@@ -32,14 +32,14 @@ bool resetting = false;       // Boolean variable for reset the motors.
 FILE *log_file;               // Log file.
 
 /* FUNCTIONS HEADERS */
-void signal_handler(int sig);
+void signal_handler( int sig );
 void interpreter();
 void setup_terminal ();
-void logPrint ( char * string);
+void logPrint ( char * string );
 void helpPrint ();
 
 /* FUNCTIONS */
-void signal_handler(int sig) {
+void signal_handler( int sig ) {
     /* Function to handle stop and reset signals. */
 
     if (sig == SIGUSR1) { // SIGUSR1 is the signal to stop the motors.
@@ -145,7 +145,7 @@ void setup_terminal (){
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 }
 
-void logPrint ( char * string) {
+void logPrint ( char * string ) {
     /* Function to print on log file adding time stamps. */
 
     time_t ltime = time(NULL);

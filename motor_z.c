@@ -25,12 +25,12 @@ bool stop_pressed = false; // Boolean variable for stop the motor.
 FILE *log_file;            // Log file.
 
 /* FUNCTIONS HEADERS */
-void signal_handler(int sig);
-float float_rand(float min, float max);
-void logPrint ( char * string);
+void signal_handler( int sig );
+float float_rand( float min, float max );
+void logPrint ( char * string );
 
 /* FUNCTIONS */
-void signal_handler(int sig) {
+void signal_handler( int sig ) {
     /* Function to handle stop and reset signals. */
 
     if (sig == SIGUSR1) { // SIGUSR1 is the signal to stop the motor.
@@ -44,14 +44,14 @@ void signal_handler(int sig) {
     }
 }
 
-float float_rand(float min, float max) {
+float float_rand( float min, float max ) {
     /* Function to generate a randomic error. */
 
     float scale = rand() / (float)RAND_MAX;
     return min + scale * (max - min); // [min, max]
 }
 
-void logPrint ( char * string) {
+void logPrint ( char * string ) {
     /* Function to print on log file adding time stamps. */
 
     time_t ltime = time(NULL);
@@ -65,6 +65,7 @@ int main() {
 
     int fd_z, fd_inspection_z; //file descriptors
     int ret;                   //select() system call return value
+    char str[80];              // String to print on log file.
     
     /* Signals that the process can receive. */
     struct sigaction sa;
@@ -72,7 +73,7 @@ int main() {
     sa.sa_handler = &signal_handler;
     sa.sa_flags = SA_RESTART;
 
-    //sigaction for SIGUSR1 & SIGUSR2
+    /* sigaction for SIGUSR1 & SIGUSR2 */
     if (sigaction(SIGUSR1, &sa, NULL) == -1)
     {
         perror("Sigaction error, SIGUSR1 on motor z\n");
@@ -100,6 +101,8 @@ int main() {
     fd_inspection_z = open("fifo_est_pos_z", O_WRONLY);
 
     while (1) {
+
+        /* Initialize the set of file descriptors for the select system call. */
         FD_ZERO(&rset);
         FD_SET(fd_z, &rset);
         ret = select(FD_SETSIZE, &rset, NULL, NULL, &tv);
@@ -110,7 +113,7 @@ int main() {
         }
         else if (FD_ISSET(fd_z, &rset) != 0) { // There is something to read!
             read(fd_z, &command, sizeof(int)); // Update the command.
-            char str[50];
+
             sprintf(str, "motor_z   : command received = %d.", command);
             logPrint(str);
         }
@@ -158,7 +161,6 @@ int main() {
         est_pos_z = z_position + float_rand(-0.005, 0.005); //compute the estimated position
         write(fd_inspection_z, &est_pos_z, sizeof(float));  //send to inspection konsole
 
-        char str[50];
         sprintf(str, "motor_z   : z_position = %f\n", z_position);
         logPrint(str);
 

@@ -74,6 +74,7 @@ void printer( float x, float z ) {
 
 	int row = floor((z / 0.625) + 0.2) + 5; // Row of the hoist.
 	int col = floor((x / 0.2) + 0.2) + 2;   // Column of the hoist.
+	char str[80];                           // String to print on log file.
 
 	curs_set(0); // Hide the cursor.
 
@@ -130,8 +131,9 @@ void logPrint ( char * string ) {
 int main(int argc, char *argv[])
 {
 
-	int fd_from_motor_x, fd_from_motor_z, fd_command_pid, fd_stop; //file descriptors
-	int ret;													   //select() system call return value
+	int fd_from_motor_x, fd_from_motor_z, fd_command_pid; //file descriptors
+	int ret;											  //select() system call return value
+	char str[80];                                         // String to print on log file.
 
 	/*process IDs*/
 	pid_t pid_motor_x = atoi(argv[1]);
@@ -144,7 +146,9 @@ int main(int argc, char *argv[])
 
 	float est_pos_x, est_pos_z; // estimate hoist X and Z positions
 	char alarm;					//char that will contain the 'stop' or 'reset' command
+
 	fd_set rset;				//set of ready file descriptors
+
 	/*the select() system call does not wait for file descriptors to be ready */
 	struct timeval tv;
 	tv.tv_sec = 0;
@@ -156,15 +160,14 @@ int main(int argc, char *argv[])
 	log_file = fopen("Log.txt", "a"); // Open the log file
 
 	start_time = time(NULL);
-	time_t ltime = time(NULL);
-	fprintf(log_file, "%.19s: inspection: Inspection console started\n", ctime(&ltime));
-	fflush(log_file);
+
+	logPrint("inspection: Inspection console started.\n");
 
 	setup_console();
 
-	while (1)
-	{
+	while (1) {
 
+		/* Initialize the set of file descriptors for the select system call. */
 		FD_ZERO(&rset);
 		FD_SET(fd_from_motor_x, &rset);
 		FD_SET(fd_from_motor_z, &rset);
@@ -172,8 +175,7 @@ int main(int argc, char *argv[])
 
 		ret = select(FD_SETSIZE, &rset, NULL, NULL, &tv);
 
-		if (ret == -1)
-		{ // An error occours.
+		if (ret == -1) { // An error occours.
 			perror("select() on motor x\n");
 			return -2;
 		}
@@ -184,9 +186,8 @@ int main(int argc, char *argv[])
 
 			kill(pid_wd, SIGTSTP); //Send a signal to let the watchdog know that an input occurred.
 
-			ltime = time(NULL);
-			fprintf(log_file, "%.19s: inspection: Input received = %c\n", ctime(&ltime), alarm);
-			fflush(log_file);
+			sprintf(str, "inspection: Input received = %c\n", alarm);
+			logPrint(str);
 
 			if (alarm == 's')
 			{								//STOP command
@@ -219,22 +220,20 @@ int main(int argc, char *argv[])
 
 		printer(est_pos_x, est_pos_z);
 
-		ltime = time(NULL);
-		fprintf(log_file, "%.19s: inspection: est_pos_x = %f, est_pos_z = %f\n", ctime(&ltime), est_pos_x, est_pos_z);
-		fflush(log_file);
+		sprintf(str, "inspection: est_pos_x = %f, est_pos_z = %f\n", est_pos_x, est_pos_z);
+		logPrint(str);
 
-		usleep(15000); //sleep for 0,5 seconds
+		usleep(15000); //sleep
 
 	} // End of while.
 
-	//closing pipes
+	/* Close pipes. */
 	close(fd_from_motor_x);
 	close(fd_from_motor_z);
 	close(fd_command_pid);
-	close(fd_stop);
-	ltime = time(NULL);
-	fprintf(log_file, "%.19s: inspection: Inspection console ended.\n", ctime(&ltime));
-	fflush(log_file);
+
+	logPrint("inspection: Inspection console ended.\n");
+
 	fclose(log_file); // Close log file.
 
 	return 0;

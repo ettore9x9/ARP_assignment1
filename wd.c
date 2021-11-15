@@ -1,3 +1,7 @@
+/* Whatchdog: it checks the other processes, and sends a reset command in case all processes 
+do nothing (no computation, no motion, no input/output) for 60 seconds. */
+
+/* LIBRARIES */
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -9,40 +13,52 @@
 #include <string.h>
 #include <time.h>
 
-/*it checks the other processes, and sends a reset command in
-case all processes do nothing (no computation, no motion, no input/output) for 60 seconds*/
-#define PERIOD 60
+/* CONSTANTS */
+#define PERIOD 60     // After this period, it launchs the reset signal.
 
-int timer = PERIOD;
-FILE * log_file;
+/* GLOBAL VARIABLES */
+int timer = PERIOD;   // Timer.
+FILE * log_file;      // Log file.
 
-// FUNCTIONS
-void signal_handler(int sig);
+/* FUNCTION HEADERS */
+void signal_handler( int sig );
+void logPrint ( char * string );
 
-void signal_handler(int sig) {
-    /* Function to handle the SIGTSTP signel. */
+/* FUNCTIONS */
+void signal_handler( int sig ) {
+    /* Function to handle the SIGTSTP signal. */
 
     if(sig==SIGTSTP){
-        timer=PERIOD; //update the timer variable
+        timer=PERIOD; // Restart the timer variable.
     }   
 }
 
+void logPrint ( char * string ) {
+    /* Function to print on log file adding time stamps. */
+
+    time_t ltime = time(NULL);
+    fprintf( log_file, "%.19s: %s", ctime( &ltime ), string );
+    fflush(log_file);
+}
+
+/* MAIN */
 int main(int argc, char * argv[]){
 
-    //motors PIDs
+    /* Acquires the motors' PIDs. */
     int pid_motor_x=atoi(argv[1]);
     int pid_motor_z=atoi(argv[2]);
 
     log_file = fopen("Log.txt","a"); // Open the log file
 
-    time_t ltime = time(NULL);
-    fprintf(log_file, "%.19s: wd        : Watchdog started\n", ctime( &ltime ) );
-    fflush(log_file);
+    logPrint("wd        : Watchdog started.\n");
 
+    /* Signals that the process can receive. */
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler =&signal_handler;
     sa.sa_flags=SA_RESTART;
+
+    /* sigaction for SIGTSTP */
     if(sigaction(SIGTSTP,&sa,NULL)==-1){
         perror("Sigaction error, SIGTSTP in WatchDog\n");
         return -9;
@@ -51,23 +67,21 @@ int main(int argc, char * argv[]){
     while(1){
 
         while (timer >= 0){ //waiting...
-            sleep(1);
-            timer--; 
+            sleep(1); // Sleep for one second.
+            timer--;  // Decrease timer variable.
         }
-    //if 60 seconds are over then send signals to motors
+
+        //if 60 seconds are ellapsed, then send the reset signal to the motors.
         kill(pid_motor_x, SIGUSR2);
         kill(pid_motor_z, SIGUSR2);
 
-        ltime = time(NULL);
-        fprintf(log_file, "%.19s: wd        : Reset for time ellapsing\n", ctime( &ltime ) );
-        fflush(log_file);
+        logPrint("wd        : Reset for time ellapsing.\n");
 
-        timer=PERIOD; //update timer variable
+        timer = PERIOD; //update timer variable
     }
 
-    ltime = time(NULL);
-    fprintf(log_file, "%.19s: wd        : Watchdog ended.\n", ctime( &ltime ) );
-    fflush(log_file);
+    logPrint("wd        : Watchdog ended.\n");
+
     fclose(log_file); // Close log file.
 
     return(0);

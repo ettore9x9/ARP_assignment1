@@ -17,12 +17,12 @@ int wstatus;
 FILE * log_file; // Log file.
 
 /* FUNCTIONS HEADERS */
-int spawn(const char * program, char ** arg_list);
-void create_fifo (const char * name);
-void logPrint ( char * string);
+int spawn( const char * program, char ** arg_list );
+void create_fifo ( const char * name );
+void logPrint ( char * string) ;
 
 /* FUNCTIONS */
-int spawn(const char * program, char ** arg_list) {
+int spawn( const char * program, char ** arg_list ) {
     /* Function to generate a child process, it returns the PID of the child. */
 
     pid_t child_pid = fork();
@@ -36,7 +36,7 @@ int spawn(const char * program, char ** arg_list) {
     }
 }
 
-void create_fifo (const char * name) {
+void create_fifo ( const char * name ) {
     /* Function to generate a named pipe. */
 
     if(mkfifo(name, 0666) == -1){
@@ -48,7 +48,7 @@ void create_fifo (const char * name) {
     }
 }
 
-void logPrint ( char * string) {
+void logPrint ( char * string ) {
     /* Function to print on log file adding time stamps. */
 
     time_t ltime = time(NULL);

@@ -63,7 +63,7 @@ void interpreter(){
     c = getchar();   // Wait for the keyboard input.
 
     if (c != 120 && c != 122 && c != 27 && c != 104) { // The input is not a command.
-        printf(BHMAG "Please, use the commands above." RESET "\n");
+        printf(BHMAG " --> Invalid command, press 'h' for help." RESET "\n");
 
     } else {
         kill(pid_wd, SIGTSTP); // Send a signal to let the watchdog know that an input occurred.
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
         return -15;
     }
 
-    log_file = fopen("Log.txt", "a"); // Open the log file.
+    log_file = fopen("Log.txt", "a"); // Opens the log file.
 
     logPrint("command   : Command console started\n");
 

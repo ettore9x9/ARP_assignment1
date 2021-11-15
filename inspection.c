@@ -1,4 +1,4 @@
-/*LIBRARIES*/
+/* LIBRARIES */
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -13,32 +13,35 @@
 #include <time.h>
 #include <stdbool.h>
 
-/*COLORS*/
+/* COLORS */
 #define RESET "\033[0m"
 #define BHRED "\e[1;91m"
 #define BHGRN "\e[1;92m"
 #define BHYEL "\e[1;93m"
 #define BHMAG "\e[1;95m"
 
-/*GLOBAL VARIABLES*/
+/* GLOBAL VARIABLES */
 int last_row = 20;
 int last_col = 20;
 FILE *log_file;
 time_t start_time;
 
-/*FUNCTIONS*/
-void setup_konsole();
-void printer(float x, float z);
+/* FUNCTIONS HEADERS */
+void setup_console();
+void printer( float x, float z );
+void logPrint ( char * string );
 
-void setup_konsole()
-{
+/* FUNCTIONS */
+void setup_console() {
+	/* Function to initialize the console.
+	To refresh the same console, the ncurses library is used. */
 
-	initscr();
+	initscr(); // Init the console screen.
 
+	/* Print the base structure of the user interface. */
 	addstr("This is the INSPECTION console.\n");
 	addstr("Press the 'r' for resetting the hoist position\n");
 	addstr("Press the 's' for stopping the hoist movement\n");
-
 	addstr("\n");
 	addstr("||===================================================||---> x\n");
 	addstr("||                                                   ||\n");
@@ -63,37 +66,34 @@ void setup_konsole()
 	addstr("z\n");
 	addstr("\n");
 
-	refresh();
+	refresh(); // Send changes to the console.
 }
 
-void printer(float x, float z)
-{
+void printer( float x, float z ) {
+	/* Function to print dinamically the position of the hoist in the console. */
 
-	int row = floor((z / 0.625) + 0.2) + 5;
-	int col = floor((x / 0.2) + 0.2) + 2;
+	int row = floor((z / 0.625) + 0.2) + 5; // Row of the hoist.
+	int col = floor((x / 0.2) + 0.2) + 2;   // Column of the hoist.
 
-	curs_set(0);
+	curs_set(0); // Hide the cursor.
 
-	for (int i = 5; i <= last_row; i++)
-	{
-
+	for (int i = 5; i <= last_row; i++) { // Overwrite with blank spaces the old characters.
 		move(i, last_col);
 		addch(' ');
 	}
 
-	for (int i = 5; i < row; i++)
-	{
+	for (int i = 5; i < row; i++) { // Write the new chain on the screen.
 		move(i, col);
 		addch('|');
 	}
 
-	move(row, col);
+	move(row, col); // Write the hoist.
 	addch('V');
 
-	last_row = row;
+	last_row = row; // Update position.
 	last_col = col;
 
-	// Print on screen dynamically with a fixed format.
+	/* Print on screen dynamically with a fixed format. */
 	move(26, 0);
 	if (x >= 0 && z >= 0)
 	{
@@ -113,14 +113,20 @@ void printer(float x, float z)
 	}
 
 	time_t ltime = time(NULL);
-	printw("Execution time = %ld\n", ltime - start_time);
+	printw("Execution time = %ld\n", ltime - start_time); // Print the execution time in seconds.
 
-	curs_set(0);
-
-	refresh();
+	refresh(); // Send changes to the console.
 }
 
-/*MAIN()*/
+void logPrint ( char * string ) {
+    /* Function to print on log file adding time stamps. */
+
+    time_t ltime = time(NULL);
+    fprintf( log_file, "%.19s: %s", ctime( &ltime ), string );
+    fflush(log_file);
+}
+
+/* MAIN */
 int main(int argc, char *argv[])
 {
 
@@ -154,7 +160,7 @@ int main(int argc, char *argv[])
 	fprintf(log_file, "%.19s: inspection: Inspection console started\n", ctime(&ltime));
 	fflush(log_file);
 
-	setup_konsole();
+	setup_console();
 
 	while (1)
 	{
@@ -186,15 +192,14 @@ int main(int argc, char *argv[])
 			{								//STOP command
 				kill(command_pid, SIGUSR1); // enable input from keyboard
 				kill(pid_motor_x, SIGUSR1); //SIGUSR1 signal has been used for STOP command
-				kill(pid_motor_z, SIGUSR1);
-				alarm = '0';
+				kill(pid_motor_z, SIGUSR1);				alarm = '0';
 			}
 
 			if (alarm == 'r')
 			{								//RESET command
 				kill(pid_motor_x, SIGUSR2); //SIGUSR2 signal has been used for RESET command
 				kill(pid_motor_z, SIGUSR2);
-				kill(command_pid, SIGUSR2); //alarm the command konsole that resetting started!
+				kill(command_pid, SIGUSR2); //alarm the command console that resetting started!
 			}
 		}
 
@@ -208,7 +213,7 @@ int main(int argc, char *argv[])
 		}
 		if ( (est_pos_x < 0.001) && (est_pos_z < 0.001) && (alarm == 'r') )
 		{
-			kill(command_pid, SIGUSR1); //alarm the command konsole that resetting has finished!
+			kill(command_pid, SIGUSR1); //alarm the command console that resetting has finished!
 			alarm = 's';
 		}
 

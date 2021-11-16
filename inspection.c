@@ -182,12 +182,8 @@ int main(int argc, char *argv[])
 
 		ret = select(FD_SETSIZE, &rset, NULL, NULL, &tv);
 
-<<<<<<< HEAD
 		if (ret == -1)// An error occours.
 		{ 
-=======
-		if (ret == -1) { // An error occours.
->>>>>>> f815cd6b9d0cca7e64df6cdc280048639d57c488
 			perror("select() on motor x\n");
 			return -2;
 		}

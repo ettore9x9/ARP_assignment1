@@ -23,8 +23,11 @@
 /* GLOBAL VARIABLES */
 int last_row = 20;
 int last_col = 20;
-FILE *log_file;
+FILE *log_file;										// Log file. 
 time_t start_time;
+char * fifo_est_pos_x = "/tmp/fifo_est_pos_x"; 		//File path
+char * fifo_est_pos_z = "/tmp/fifo_est_pos_z";		//File path
+char * fifo_inspection = "/tmp/command_to_in_pid";	//File path
 
 /* FUNCTIONS HEADERS */
 void setup_console();
@@ -140,8 +143,10 @@ int main(int argc, char *argv[])
 	pid_t pid_motor_z = atoi(argv[2]);
 	pid_t pid_wd = atoi(argv[3]);
 	pid_t command_pid;
+
 	//receive command pid
-	fd_command_pid = open("command_to_in_pid", O_RDONLY);
+	fd_command_pid = open(fifo_inspection, O_RDONLY);
+
 	read(fd_command_pid, &command_pid, sizeof(int));
 
 	float est_pos_x, est_pos_z; // estimate hoist X and Z positions
@@ -155,9 +160,11 @@ int main(int argc, char *argv[])
 	tv.tv_usec = 0;
 
 	/*opening pipes*/
-	fd_from_motor_x = open("fifo_est_pos_x", O_RDONLY);
-	fd_from_motor_z = open("fifo_est_pos_z", O_RDONLY);
-	log_file = fopen("Log.txt", "a"); // Open the log file
+	fd_from_motor_x = open(fifo_est_pos_x, O_RDONLY);
+	fd_from_motor_z = open(fifo_est_pos_z, O_RDONLY);
+
+	/* Open the log file */
+	log_file = fopen("Log.txt", "a"); 
 
 	start_time = time(NULL);
 
@@ -175,13 +182,18 @@ int main(int argc, char *argv[])
 
 		ret = select(FD_SETSIZE, &rset, NULL, NULL, &tv);
 
+<<<<<<< HEAD
+		if (ret == -1)// An error occours.
+		{ 
+=======
 		if (ret == -1) { // An error occours.
+>>>>>>> f815cd6b9d0cca7e64df6cdc280048639d57c488
 			perror("select() on motor x\n");
 			return -2;
 		}
 
-		if (FD_ISSET(0, &rset) != 0)
-		{					   //if the standard input receives any inputs...
+		if (FD_ISSET(0, &rset) != 0)//if the standard input receives any inputs...
+		{					   
 			alarm = getchar(); //get keyboard input
 
 			kill(pid_wd, SIGTSTP); //Send a signal to let the watchdog know that an input occurred.
@@ -190,16 +202,17 @@ int main(int argc, char *argv[])
 			logPrint(str);
 
 			if (alarm == 's')
-			{								//STOP command
-				kill(command_pid, SIGUSR1); // enable input from keyboard
-				kill(pid_motor_x, SIGUSR1); //SIGUSR1 signal has been used for STOP command
-				kill(pid_motor_z, SIGUSR1);				alarm = '0';
+			{								
+				kill(command_pid, SIGUSR1); //STOP command
+				kill(pid_motor_x, SIGUSR1); // enable input from keyboard
+				kill(pid_motor_z, SIGUSR1);	//SIGUSR1 signal has been used for STOP command			
+				alarm = '0';
 			}
 
 			if (alarm == 'r')
-			{								//RESET command
-				kill(pid_motor_x, SIGUSR2); //SIGUSR2 signal has been used for RESET command
-				kill(pid_motor_z, SIGUSR2);
+			{								
+				kill(pid_motor_x, SIGUSR2); //RESET command
+				kill(pid_motor_z, SIGUSR2);//SIGUSR2 signal has been used for RESET command
 				kill(command_pid, SIGUSR2); //alarm the command console that resetting started!
 			}
 		}

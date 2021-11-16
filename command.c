@@ -20,16 +20,19 @@
 #define BHMAG "\e[1;95m"
 
 /* GLOBAL VARIABLES */
-const int cmd_increase_z = 1; // This represents the "increase Z" command.
-const int cmd_decrease_z = 2; // This represents the "decrease Z" command.
-const int cmd_increase_x = 3; // This represents the "increase X" command.
-const int cmd_decrease_x = 4; // This represents the "decrease X" command.
-const int cmd_stop_z = 5;     // This represents the "STOP Z" command.
-const int cmd_stop_x = 6;     // This represents the "STOP X" command.
-int fd_x, fd_z, fd_pid;       // File descriptors.
-pid_t command_pid, pid_wd;    // Process IDs.
-bool resetting = false;       // Boolean variable for reset the motors.
-FILE *log_file;               // Log file.
+const int cmd_increase_z = 1;                       // This represents the "increase Z" command.
+const int cmd_decrease_z = 2;                       // This represents the "decrease Z" command.
+const int cmd_increase_x = 3;                       // This represents the "increase X" command.
+const int cmd_decrease_x = 4;                       // This represents the "decrease X" command.
+const int cmd_stop_z = 5;                           // This represents the "STOP Z" command.
+const int cmd_stop_x = 6;                           // This represents the "STOP X" command.
+int fd_x, fd_z, fd_pid;                             // File descriptors.
+pid_t command_pid, pid_wd;                          // Process IDs.
+bool resetting = false;                             // Boolean variable for reset the motors.
+FILE *log_file;                                     // Log file.
+char * fifo_z = "/tmp/fifo_command_to_mot_z";       //File path
+char * fifo_x = "/tmp/fifo_command_to_mot_x";       //File path
+char * fifo_inspection = "/tmp/command_to_in_pid";  //File path
 
 /* FUNCTIONS HEADERS */
 void signal_handler( int sig );
@@ -199,9 +202,11 @@ int main(int argc, char *argv[]) {
     helpPrint();
 
     /* Open pipes */
-    fd_z = open("fifo_command_to_mot_z", O_WRONLY);
-    fd_x = open("fifo_command_to_mot_x", O_WRONLY);
-    fd_pid = open("command_to_in_pid", O_WRONLY);
+    fd_z = open(fifo_z, O_WRONLY);
+    fd_x = open(fifo_x, O_WRONLY);
+    fd_pid = open(fifo_inspection, O_WRONLY);
+
+    /* Send the Command PID to the Inspection*/
     write(fd_pid, &command_pid, sizeof(int));
 
     while (1)

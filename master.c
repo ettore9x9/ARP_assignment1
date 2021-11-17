@@ -70,11 +70,11 @@ int main() {
     logPrint("Master    : Log file created by master process.\n");
 
     // Creates all named pipes for communications.
-    create_fifo("fifo_command_to_mot_x");
-    create_fifo("fifo_command_to_mot_z");
-    create_fifo("fifo_est_pos_x");
-    create_fifo("fifo_est_pos_z");
-    create_fifo("command_to_in_pid");
+    create_fifo("/tmp/fifo_command_to_mot_x");
+    create_fifo("/tmp/fifo_command_to_mot_z");
+    create_fifo("/tmp/fifo_est_pos_x");
+    create_fifo("/tmp/fifo_est_pos_z");
+    create_fifo("/tmp/command_to_in_pid");
 
     /* Executes all child processes. */
     char * arg_list_motor_x[] = { "./motor_x", NULL, NULL };

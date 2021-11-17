@@ -16,12 +16,14 @@
 #define STEP 0.01  // Velocity of the motor.
 
 /* GLOBAL VARIABLES */
-float x_position = X_LB;   // Real position of the x motor.
-float est_pos_x = X_LB;    // Estimated position of the x motor.
-int command = 0;           // Command received.
-bool resetting = false;    // Boolean variable for reset the motor.
-bool stop_pressed = false; // Boolean variable for stop the motor.
-FILE *log_file;            // Log file.
+float x_position = X_LB;                        // Real position of the x motor.
+float est_pos_x = X_LB;                         // Estimated position of the x motor.
+int command = 0;                                // Command received.
+bool resetting = false;                         // Boolean variable for reset the motor.
+bool stop_pressed = false;                      // Boolean variable for stop the motor.
+FILE *log_file;                                 // Log file.
+char * fifo_x = "/tmp/fifo_command_to_mot_x";   //File path
+char * fifo_est_pos_x = "/tmp/fifo_est_pos_x";  //File path
 
 /* FUNCTIONS HEADERS */
 void signal_handler( int sig );
@@ -94,8 +96,8 @@ int main() {
     tv.tv_usec = 0;
 
     /* Open pipes. */
-    fd_x = open("fifo_command_to_mot_x", O_RDONLY);
-    fd_inspection_x=open("fifo_est_pos_x", O_WRONLY);
+    fd_x = open(fifo_x, O_RDONLY);
+    fd_inspection_x=open(fifo_est_pos_x, O_WRONLY);
 
     while (1) {
 

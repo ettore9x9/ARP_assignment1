@@ -18,6 +18,7 @@
 #define BHGRN "\e[1;92m"
 #define BHYEL "\e[1;93m"
 #define BHMAG "\e[1;95m"
+#define BHCYN "\e[1;96m"
 
 /* GLOBAL VARIABLES */
 const int cmd_increase_z = 1;                       // This represents the "increase Z" command.
@@ -36,7 +37,7 @@ char * fifo_inspection = "/tmp/command_to_in_pid";  //File path
 
 /* FUNCTIONS HEADERS */
 void signal_handler( int sig );
-void interpreter();
+int interpreter();
 void setup_terminal ();
 void logPrint ( char * string );
 void helpPrint ();
@@ -58,22 +59,31 @@ void signal_handler( int sig ) {
     }
 }
 
-void interpreter(){
+int interpreter(){
     /* Function to receive input from the keyboard and convert it into commands.
     It also writes on the correct pipe to control motors.*/
 
     int c, c1, c2;   // Input characters are treated as integers, with ASCII conversion.
     c = getchar();   // Wait for the keyboard input.
 
-    if (c != 120 && c != 122 && c != 27 && c != 104) { // The input is not a command.
+    if (c != 120 && c != 122 && c != 27 && c != 104 && c!= 113) { // The input is not a command.
         printf(BHMAG " --> Invalid command, press 'h' for help." RESET "\n");
 
-    } else {
+    } else { // The input is valid.
+        
         kill(pid_wd, SIGTSTP); // Send a signal to let the watchdog know that an input occurred.
 
         time_t ltime = time(NULL);
         fprintf(log_file, "%.19s: command   : Input received.\n", ctime(&ltime));
         fflush(log_file);
+
+        if ( c == 113) {
+            return 1;
+        }
+
+        if ( c == 104) { // ASCII number for 'h' keyboard key.
+            helpPrint();
+        }
 
         if (!resetting) { // When the motors are resetting, this part is not executed.
 
@@ -112,9 +122,6 @@ void interpreter(){
                     printf("\n" BHRED "Z stop" RESET "\n");
                     write(fd_z, &cmd_stop_z, sizeof(int));
                 }
-                if ( c == 104) { // ASCII number for 'h' keyboard key.
-                    helpPrint();
-                }
             }
 
         } else { // The motors are resetting, the command console can not receive any inputs.
@@ -128,6 +135,7 @@ void interpreter(){
             fflush(stdout);
         }
     }
+    return 0;
 }
 
 void setup_terminal (){
@@ -163,7 +171,8 @@ void helpPrint () {
     printf(BHMAG "Press the arrows to move the hoist." RESET "\n");
     printf(BHYEL "Press 'x' for stopping the horizontal movement." RESET "\n");
     printf(BHYEL "Press 'z' for stopping the vertical movement." RESET "\n");
-    printf(BHYEL "Press 'h' to display again this message." RESET "\n");
+    printf(BHCYN "Press 'h' to display again this message." RESET "\n");
+    printf(BHCYN "Press 'q' to quit." RESET "\n");
     fflush(stdout);
 }
 
@@ -211,7 +220,7 @@ int main(int argc, char *argv[]) {
 
     while (1)
     {
-        interpreter();
+        if (interpreter()) break;
     }
 
     /* Close pipes */

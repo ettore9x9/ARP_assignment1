@@ -60,7 +60,10 @@ void logPrint ( char * string ) {
 int main() {
 
     /* Creates a log file */
-    log_file = fopen("Log.txt", "w"); // Create the file Log.txt, if the file already exists, overwrites it.
+    FILE * log_file_create;
+    log_file_create = fopen("Log.txt", "w"); // Create the file Log.txt, if the file already exists, overwrites it.
+
+    log_file = fopen("Log.txt", "a");
 
     if(!log_file){ // Error management for fopen.
         perror("Error file");
@@ -106,20 +109,6 @@ int main() {
     /* Waits for child processes. */ 
     wait(&wstatus);
 
-    logPrint("Master    : Child process terminated.\n");
-
-    if(WIFEXITED(wstatus)){
-        int status = WEXITSTATUS(wstatus);
-        if(status<0){ //if any of child processes returns a negative number kill all of them!
-            printf("Negative number occured\n");
-            kill(pid_command, SIGKILL);
-            kill(pid_inspection, SIGKILL);
-            kill(pid_wd, SIGKILL);
-            kill(pid_motor_x, SIGKILL);
-            kill(pid_motor_z, SIGKILL);
-        }
-    }
-
     /* Deletes named pipes. */
     unlink("fifo_command_to_mot_x");
     unlink("fifo_command_to_mot_z");
@@ -127,10 +116,20 @@ int main() {
     unlink("fifo_est_pos_z");
     unlink("command_to_in_pid");
 
+    kill(pid_inspection, SIGKILL);
+    kill(pid_command, SIGKILL);
+    kill(pid_wd, SIGKILL);
+    kill(pid_motor_x, SIGKILL);
+    kill(pid_motor_z, SIGKILL);
+
+    char str[100];
+    sprintf(str, "Master    : Child process terminated with status : %d\n", wstatus);
+    logPrint(str);
 
     logPrint("Master    : End.\n");
 
     fclose(log_file); // Closes log file.
+    fclose(log_file_create);
 
     return 0;
 

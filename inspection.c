@@ -55,7 +55,7 @@ void setup_console() {
 	refresh();
 	clear();
 
-	/* Print the base structure of the user interface. */
+	/* Print the base structure of the GUI. */
 	addstr("This is the INSPECTION console.\n");
 	addstr("Press the 'r' for resetting the hoist position\n");
 	addstr("Press the 's' for stopping the hoist movement\n");
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
     /* sigaction for SIGWINCH */
     if(sigaction(SIGWINCH,&sa,NULL)==-1){
         perror("Sigaction error, SIGUSR1 motor x\n");
-        return -6;
+        return -10;
     }
 
 	/*process IDs*/
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 		if (ret == -1)// An error occours.
 		{ 
 			perror("select() on motor x\n");
-			return -2;
+			return -11;
 		}
 
 		if (FD_ISSET(0, &rset) != 0)//if the standard input receives any inputs...
@@ -225,23 +225,23 @@ int main(int argc, char *argv[])
 
 			if (alarm == 's')
 			{								
-				kill(command_pid, SIGUSR1); //STOP command
+				kill(command_pid, SIGUSR1); // STOP command
 				kill(pid_motor_x, SIGUSR1); // enable input from keyboard
-				kill(pid_motor_z, SIGUSR1);	//SIGUSR1 signal has been used for STOP command			
+				kill(pid_motor_z, SIGUSR1);	// SIGUSR1 signal has been used for STOP command			
 				alarm = '0';
 			}
 
 			if (alarm == 'r')
 			{								
-				kill(pid_motor_x, SIGUSR2); //RESET command
-				kill(pid_motor_z, SIGUSR2);//SIGUSR2 signal has been used for RESET command
-				kill(command_pid, SIGUSR2); //alarm the command console that resetting started!
+				kill(pid_motor_x, SIGUSR2);	//RESET command
+				kill(pid_motor_z, SIGUSR2);	//SIGUSR2 signal has been used for RESET command
+				kill(command_pid, SIGUSR2); //alarm the command console that resetting has started!
 			}
 		}
 
 		if (FD_ISSET(fd_from_motor_z, &rset) != 0)
 		{
-			read(fd_from_motor_z, &est_pos_z, sizeof(float));
+			read(fd_from_motor_z, &est_pos_z, sizeof(float)); //read the estimated position from motors...
 		}
 		if (FD_ISSET(fd_from_motor_x, &rset) != 0)
 		{
@@ -250,12 +250,12 @@ int main(int argc, char *argv[])
 		if ( (est_pos_x < 0.001) && (est_pos_z < 0.001) && (alarm == 'r') )
 		{
 			kill(command_pid, SIGUSR1); //alarm the command console that resetting has finished!
-			alarm = 's';
+			alarm = 's'; //the hoist can now stop!
 		}
 
 		printer(est_pos_x, est_pos_z);
 
-		sprintf(str, "inspection: est_pos_x = %f, est_pos_z = %f\n", est_pos_x, est_pos_z);
+		sprintf(str, "inspection: est_pos_x = %f, est_pos_z = %f\n", est_pos_x, est_pos_z); //print data on LogFile
 		logPrint(str);
 
 		usleep(15000); //sleep

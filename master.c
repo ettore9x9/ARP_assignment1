@@ -32,7 +32,7 @@ int spawn( const char * program, char ** arg_list ) {
     else { // Child process.
         execvp (program, arg_list);
         perror("exec failed");  // If it's executed, an error occurred.
-        return -4;
+        return -1;
     }
 }
 
@@ -43,7 +43,7 @@ void create_fifo ( const char * name ) {
 
         if (errno != EEXIST){ // Error management for mkfifo.
           perror("Error creating named fifo\n");
-          exit(-5);
+          exit(-1);
         }
     }
 }
@@ -67,7 +67,7 @@ int main() {
 
     if(!log_file){ // Error management for fopen.
         perror("Error file");
-        return -1;
+        return -2;
     }
 
     logPrint("Master    : Log file created by master process.\n");
@@ -86,7 +86,7 @@ int main() {
     char * arg_list_motor_z[] = { "./motor_z", NULL, NULL };
     pid_motor_z = spawn("./motor_z", arg_list_motor_z);
 
-    /* Turns motors' PIDs into strings. */
+    /* Convert motors' PIDs into strings. */
     char pid_motor_x_char[20];
     char pid_motor_z_char[20];
     sprintf(pid_motor_x_char, "%d", pid_motor_x); 
@@ -95,6 +95,8 @@ int main() {
     char * arg_list_wd[] = {"./wd", pid_motor_x_char, pid_motor_z_char, (char*)NULL };
     pid_wd = spawn("./wd", arg_list_wd); // Executes the watchdog.
 
+
+    /* Convert WatchDog' PID into string. */
     char pid_wd_char[20];
     sprintf(pid_wd_char, "%d", pid_wd);
 
@@ -116,6 +118,8 @@ int main() {
     unlink("fifo_est_pos_z");
     unlink("command_to_in_pid");
 
+    /* If any of the child processes returns, then kill al the processes. */ 
+
     kill(pid_inspection, SIGKILL);
     kill(pid_command, SIGKILL);
     kill(pid_wd, SIGKILL);
@@ -123,7 +127,8 @@ int main() {
     kill(pid_motor_z, SIGKILL);
 
     char str[100];
-    sprintf(str, "Master    : Child process terminated with status : %d\n", wstatus);
+    sprintf(str, "Master    : Child process terminated with status : %d\n", wstatus); //here we can check if the termionation was due to a problem or not.
+                                                                                      //A negative number means a problem. Value 0 means that user just normally quitted the program.  
     logPrint(str);
 
     logPrint("Master    : End.\n");

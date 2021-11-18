@@ -24,7 +24,7 @@ bool resetting = false;                         // Boolean variable for reset th
 bool stop_pressed = false;                      // Boolean variable for stop the motor.
 FILE *log_file;                                 // Log file.
 char * fifo_z = "/tmp/fifo_command_to_mot_z";   // File path
-char * fifo_est_pos_z = "/tmp/fifo_est_pos_z";  //File path
+char * fifo_est_pos_z = "/tmp/fifo_est_pos_z";  // File path
 
 /* FUNCTIONS HEADERS */
 void signal_handler( int sig );
@@ -79,12 +79,12 @@ int main() {
     if (sigaction(SIGUSR1, &sa, NULL) == -1)
     {
         perror("Sigaction error, SIGUSR1 on motor z\n");
-        return -10;
+        return -8;
     }
     if (sigaction(SIGUSR2, &sa, NULL) == -1)
     {
         perror("Sigaction error, SIGUSR2 on motor z\n");
-        return -11;
+        return -9;
     }
 
     log_file = fopen("Log.txt", "a"); // Open the log file
@@ -146,7 +146,7 @@ int main() {
                 // z_position must not change
             }
 
-        } else { // The motor is resetting.
+        } else { // The motor is resetting. // The motor is resetting. The only usable command during reset is STOP command.
 
             if (!stop_pressed && z_position > Z_LB) {
                 z_position -= STEP; // Returns to zero position.
@@ -158,8 +158,10 @@ int main() {
 
             stop_pressed = false;
         }
-
-        /* Send the estimate position to the inspection console. */
+    /*  If the system is resetitng we continue sending (to the inspection konsole)
+        the hoist position with an error because the measurement uncertainty continues 
+        to exists even if the system is resetting!  */
+    /*  Send the estimate position to the inspection console. */
         est_pos_z = z_position + float_rand(-0.005, 0.005); //compute the estimated position
         write(fd_inspection_z, &est_pos_z, sizeof(float));  //send to inspection konsole
 

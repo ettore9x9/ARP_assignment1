@@ -42,6 +42,10 @@ void setup_terminal ();
 void logPrint ( char * string );
 void helpPrint ();
 
+// Defining CHECK() tool. We use this error checking method to make the code ligher
+
+#define CHECK(X) ({int val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : val); })
+
 /* FUNCTIONS */
 void signal_handler( int sig ) {
     /* Function to handle stop and reset signals. */
@@ -77,8 +81,8 @@ int interpreter(){
         fprintf(log_file, "%.19s: command   : Input received.\n", ctime(&ltime));
         fflush(log_file);
 
-        if ( c == 113) {
-            return 1;
+        if ( c == 113) { // ASCII number for 'q' keyboard key.
+            return 1; //the return value is not a negative number because the user just quitted the application and no errors occurred.
         }
 
         if ( c == 104) { // ASCII number for 'h' keyboard key.
@@ -124,7 +128,7 @@ int interpreter(){
                 }
             }
 
-        } else { // The motors are resetting, the command console can not receive any inputs.
+        } else { // The motors are resetting!
 
             if ( c == 27 ) {
                 getchar();
@@ -194,12 +198,12 @@ int main(int argc, char *argv[]) {
     /* sigaction for SIGUSR1 & SIGUSR2 */
     if (sigaction(SIGUSR1, &sa, NULL) == -1) {
         perror("Sigaction error, SIGUSR1 command\n");
-        return -14;
+        return -3;
     }
 
     if (sigaction(SIGUSR2, &sa, NULL) == -1) {
         perror("Sigaction error, SIGUSR2 command");
-        return -15;
+        return -4;
     }
 
     log_file = fopen("Log.txt", "a"); // Opens the log file.
@@ -220,7 +224,8 @@ int main(int argc, char *argv[]) {
 
     while (1)
     {
-        if (interpreter()) break;
+        //if the interpreter function returns 1, then the quit button has been pressed.
+        if (interpreter()) break; 
     }
 
     /* Close pipes */

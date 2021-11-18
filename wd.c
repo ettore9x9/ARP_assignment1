@@ -61,14 +61,14 @@ int main(int argc, char * argv[]){
     /* sigaction for SIGTSTP */
     if(sigaction(SIGTSTP,&sa,NULL)==-1){
         perror("Sigaction error, SIGTSTP in WatchDog\n");
-        return -9;
+        return -12;
     }
 
     while(1){
 
-        while (timer >= 0){ //waiting...
-            sleep(1); // Sleep for one second.
-            timer--;  // Decrease timer variable.
+        while (timer >= 0){     //waiting...
+            sleep(1);           // Sleep for one second.
+            timer--;            // Decrease timer variable.
         }
 
         //if 60 seconds are ellapsed, then send the reset signal to the motors.

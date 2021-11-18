@@ -92,8 +92,8 @@ int main() {
     tv.tv_usec = 0;
 
     /* Open pipes. */
-    fd_x = open(fifo_x, O_RDONLY);
-    fd_inspection_x=open(fifo_est_pos_x, O_WRONLY);
+    fd_x = CHECK(open(fifo_x, O_RDONLY));
+    fd_inspection_x=CHECK(open(fifo_est_pos_x, O_WRONLY));
 
     while (1) {
 
@@ -104,7 +104,7 @@ int main() {
         ret = CHECK(select(FD_SETSIZE, &rset, NULL, NULL, &tv));
 
         if (FD_ISSET(fd_x, &rset) != 0) { // There is something to read!
-            read(fd_x, &command, sizeof(int)); // Update the command.
+            CHECK(read(fd_x, &command, sizeof(int))); // Update the command.
 
             sprintf(str, "motor_x   : command received = %d.\n", command);
             logPrint(str);

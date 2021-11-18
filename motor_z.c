@@ -104,7 +104,7 @@ int main() {
         ret = CHECK(select(FD_SETSIZE, &rset, NULL, NULL, &tv));
 
         if (FD_ISSET(fd_z, &rset) != 0) { // There is something to read!
-            read(fd_z, &command, sizeof(int)); // Update the command.
+            CHECK(read(fd_z, &command, sizeof(int))); // Update the command.
 
             sprintf(str, "motor_z   : command received = %d.\n", command);
             logPrint(str);

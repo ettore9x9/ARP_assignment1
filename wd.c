@@ -12,6 +12,8 @@ do nothing (no computation, no motion, no input/output) for 60 seconds. */
 #include <signal.h>
 #include <string.h>
 #include <time.h>
+/* Defining CHECK() tool. By using this methid the code results ligher and cleaner */
+#define CHECK(X) ({int __val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : __val); })
 
 /* CONSTANTS */
 #define PERIOD 60     // After this period, it launchs the reset signal.
@@ -59,10 +61,7 @@ int main(int argc, char * argv[]){
     sa.sa_flags=SA_RESTART;
 
     /* sigaction for SIGTSTP */
-    if(sigaction(SIGTSTP,&sa,NULL)==-1){
-        perror("Sigaction error, SIGTSTP in WatchDog\n");
-        return -12;
-    }
+    CHECK(sigaction(SIGTSTP,&sa,NULL));
 
     while(1){
 
@@ -72,8 +71,8 @@ int main(int argc, char * argv[]){
         }
 
         //if 60 seconds are ellapsed, then send the reset signal to the motors.
-        kill(pid_motor_x, SIGUSR2);
-        kill(pid_motor_z, SIGUSR2);
+        CHECK(kill(pid_motor_x, SIGUSR2));
+        CHECK(kill(pid_motor_z, SIGUSR2));
 
         logPrint("wd        : Reset for time ellapsing.\n");
 
@@ -84,5 +83,5 @@ int main(int argc, char * argv[]){
 
     fclose(log_file); // Close log file.
 
-    return(0);
+    return 0;
 }

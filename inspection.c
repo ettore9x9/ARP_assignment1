@@ -12,6 +12,8 @@
 #include <math.h>
 #include <time.h>
 #include <stdbool.h>
+/* Defining CHECK() tool. By using this methid the code results ligher and cleaner */
+#define CHECK(X) ({int __val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : __val); })
 
 /* COLORS */
 #define RESET "\033[0m"
@@ -157,12 +159,9 @@ int main(int argc, char *argv[])
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &signal_handler;
     sa.sa_flags = SA_RESTART;
-
+	
     /* sigaction for SIGWINCH */
-    if(sigaction(SIGWINCH,&sa,NULL)==-1){
-        perror("Sigaction error, SIGUSR1 motor x\n");
-        return -10;
-    }
+	CHECK(sigaction(SIGWINCH,&sa,NULL));
 
 	/*process IDs*/
 	pid_t pid_motor_x = atoi(argv[1]);
@@ -171,9 +170,9 @@ int main(int argc, char *argv[])
 	pid_t command_pid;
 
 	//receive command pid
-	fd_command_pid = open(fifo_inspection, O_RDONLY);
+	fd_command_pid = CHECK(open(fifo_inspection, O_RDONLY));
 
-	read(fd_command_pid, &command_pid, sizeof(int));
+	CHECK(read(fd_command_pid, &command_pid, sizeof(int)));
 
 	float est_pos_x, est_pos_z; // estimate hoist X and Z positions
 	char alarm;					//char that will contain the 'stop' or 'reset' command
@@ -186,8 +185,8 @@ int main(int argc, char *argv[])
 	tv.tv_usec = 0;
 
 	/*opening pipes*/
-	fd_from_motor_x = open(fifo_est_pos_x, O_RDONLY);
-	fd_from_motor_z = open(fifo_est_pos_z, O_RDONLY);
+	fd_from_motor_x = CHECK(open(fifo_est_pos_x, O_RDONLY));
+	fd_from_motor_z = CHECK(open(fifo_est_pos_z, O_RDONLY));
 
 	/* Open the log file */
 	log_file = fopen("Log.txt", "a"); 
@@ -206,50 +205,44 @@ int main(int argc, char *argv[])
 		FD_SET(fd_from_motor_z, &rset);
 		FD_SET(0, &rset);
 
-		ret = select(FD_SETSIZE, &rset, NULL, NULL, &tv);
-
-		if (ret == -1)// An error occours.
-		{ 
-			perror("select() on motor x\n");
-			return -11;
-		}
+		ret = CHECK(select(FD_SETSIZE, &rset, NULL, NULL, &tv));
 
 		if (FD_ISSET(0, &rset) != 0)//if the standard input receives any inputs...
 		{					   
 			alarm = getchar(); //get keyboard input
 
-			kill(pid_wd, SIGTSTP); //Send a signal to let the watchdog know that an input occurred.
+			CHECK(kill(pid_wd, SIGTSTP)); //Send a signal to let the watchdog know that an input occurred.
 
 			sprintf(str, "inspection: Input received = %c\n", alarm);
 			logPrint(str);
 
 			if (alarm == 's')
 			{								
-				kill(command_pid, SIGUSR1); // STOP command
-				kill(pid_motor_x, SIGUSR1); // enable input from keyboard
-				kill(pid_motor_z, SIGUSR1);	// SIGUSR1 signal has been used for STOP command			
+				CHECK(kill(command_pid, SIGUSR1)); 	// STOP command
+				CHECK(kill(pid_motor_x, SIGUSR1)); 	// enable input from keyboard
+				CHECK(kill(pid_motor_z, SIGUSR1));	// SIGUSR1 signal has been used for STOP command			
 				alarm = '0';
 			}
 
 			if (alarm == 'r')
 			{								
-				kill(pid_motor_x, SIGUSR2);	//RESET command
-				kill(pid_motor_z, SIGUSR2);	//SIGUSR2 signal has been used for RESET command
-				kill(command_pid, SIGUSR2); //alarm the command console that resetting has started!
+				CHECK(kill(pid_motor_x, SIGUSR2));	//RESET command
+				CHECK(kill(pid_motor_z, SIGUSR2));	//SIGUSR2 signal has been used for RESET command
+				CHECK(kill(command_pid, SIGUSR2)); 	//alarm the command console that resetting has started!
 			}
 		}
 
 		if (FD_ISSET(fd_from_motor_z, &rset) != 0)
 		{
-			read(fd_from_motor_z, &est_pos_z, sizeof(float)); //read the estimated position from motors...
+			CHECK(read(fd_from_motor_z, &est_pos_z, sizeof(float))); //read the estimated position from motors...
 		}
 		if (FD_ISSET(fd_from_motor_x, &rset) != 0)
 		{
-			read(fd_from_motor_x, &est_pos_x, sizeof(float));
+			CHECK(read(fd_from_motor_x, &est_pos_x, sizeof(float)));
 		}
 		if ( (est_pos_x < 0.001) && (est_pos_z < 0.001) && (alarm == 'r') )
 		{
-			kill(command_pid, SIGUSR1); //alarm the command console that resetting has finished!
+			CHECK(kill(command_pid, SIGUSR1)); //alarm the command console that resetting has finished!
 			alarm = 's'; //the hoist can now stop!
 		}
 
@@ -263,9 +256,9 @@ int main(int argc, char *argv[])
 	} // End of while.
 
 	/* Close pipes. */
-	close(fd_from_motor_x);
-	close(fd_from_motor_z);
-	close(fd_command_pid);
+	CHECK(close(fd_from_motor_x));
+	CHECK(close(fd_from_motor_z));
+	CHECK(close(fd_command_pid));
 
 	logPrint("inspection: Inspection console ended.\n");
 

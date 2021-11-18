@@ -11,6 +11,8 @@
 #include <termios.h>
 #include <time.h>
 #include <stdbool.h>
+/* Defining CHECK() tool. By using this methid the code results ligher and cleaner */
+#define CHECK(X) ({int __val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : __val); })
 
 /* COLORS */
 #define RESET "\033[0m"
@@ -41,10 +43,6 @@ int interpreter();
 void setup_terminal ();
 void logPrint ( char * string );
 void helpPrint ();
-
-// Defining CHECK() tool. We use this error checking method to make the code ligher
-
-#define CHECK(X) ({int val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : val); })
 
 /* FUNCTIONS */
 void signal_handler( int sig ) {
@@ -82,7 +80,7 @@ int interpreter(){
         fflush(log_file);
 
         if ( c == 113) { // ASCII number for 'q' keyboard key.
-            return 1; //the return value is not a negative number because the user just quitted the application and no errors occurred.
+            return 1; //no errors occurred. User just quitted the aplication. 
         }
 
         if ( c == 104) { // ASCII number for 'h' keyboard key.
@@ -100,19 +98,19 @@ int interpreter(){
 
                     if (c2 == 65) { //third ASCII nummber for upwards arrow.
                         printf("\n" BHYEL "Decrease Z" RESET "\n");
-                        write(fd_z, &cmd_decrease_z, sizeof(int));
+                        CHECK(write(fd_z, &cmd_decrease_z, sizeof(int)));
                     }
                     if (c2 == 66) { //third ASCII nummber for downwards arrow.
                         printf("\n" BHYEL "Increase Z" RESET "\n");
-                        write(fd_z, &cmd_increase_z, sizeof(int));
+                        CHECK(write(fd_z, &cmd_increase_z, sizeof(int)));
                     }
                     if (c2 == 67) { //third ASCII nummber for right arrow.
                         printf("\n" BHMAG "Increase X" RESET "\n");
-                        write(fd_x, &cmd_increase_x, sizeof(int));
+                        CHECK(write(fd_x, &cmd_increase_x, sizeof(int)));
                     }
                     if (c2 == 68) { //third ASCII nummber for left arrow.
                         printf("\n" BHMAG "Decrease X" RESET "\n");
-                        write(fd_x, &cmd_decrease_x, sizeof(int));
+                        CHECK(write(fd_x, &cmd_decrease_x, sizeof(int)));
                     }
                 }
             }
@@ -120,11 +118,11 @@ int interpreter(){
             {
                 if (c == 120) { // ASCII number for 'x' keyboard key.
                     printf("\n" BHRED "X stop" RESET "\n");
-                    write(fd_x, &cmd_stop_x, sizeof(int));
+                    CHECK(write(fd_x, &cmd_stop_x, sizeof(int)));
                 }
                 if (c == 122) { // ASCII number for 'z' keyboard key.
                     printf("\n" BHRED "Z stop" RESET "\n");
-                    write(fd_z, &cmd_stop_z, sizeof(int));
+                    CHECK(write(fd_z, &cmd_stop_z, sizeof(int)));
                 }
             }
 
@@ -196,15 +194,8 @@ int main(int argc, char *argv[]) {
     sa.sa_flags = SA_RESTART;
 
     /* sigaction for SIGUSR1 & SIGUSR2 */
-    if (sigaction(SIGUSR1, &sa, NULL) == -1) {
-        perror("Sigaction error, SIGUSR1 command\n");
-        return -3;
-    }
-
-    if (sigaction(SIGUSR2, &sa, NULL) == -1) {
-        perror("Sigaction error, SIGUSR2 command");
-        return -4;
-    }
+    CHECK(sigaction(SIGUSR1, &sa, NULL));
+    CHECK(sigaction(SIGUSR2, &sa, NULL));
 
     log_file = fopen("Log.txt", "a"); // Opens the log file.
 
@@ -214,28 +205,27 @@ int main(int argc, char *argv[]) {
     fflush(stdout);
     helpPrint();
 
-    /* Open pipes */
-    fd_z = open(fifo_z, O_WRONLY);
-    fd_x = open(fifo_x, O_WRONLY);
-    fd_pid = open(fifo_inspection, O_WRONLY);
+    /* Opening pipes */
+    fd_z = CHECK(open(fifo_z, O_WRONLY));
+    fd_x = CHECK(open(fifo_x, O_WRONLY));
+    fd_pid = CHECK(open(fifo_inspection, O_WRONLY));
 
     /* Send the Command PID to the Inspection*/
-    write(fd_pid, &command_pid, sizeof(int));
+    CHECK(write(fd_pid, &command_pid, sizeof(int)));
 
     while (1)
     {
-        //if the interpreter function returns 1, then the quit button has been pressed.
+        //if the interpreter function returns 1, then the quit button has been pressed and the process can termitates.
         if (interpreter()) break; 
     }
 
     /* Close pipes */
-    close(fd_x);
-    close(fd_z);
-    close(fd_pid);
+    CHECK(close(fd_x));
+    CHECK(close(fd_z));
+    CHECK(close(fd_pid));
 
     logPrint("command   : Command console ended\n");
 
     fclose(log_file); // Close log file.
-
     return 0;
 }

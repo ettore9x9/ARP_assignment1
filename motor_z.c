@@ -10,6 +10,8 @@
 #include <string.h>
 #include <time.h>
 #include <stdbool.h>
+/* Defining CHECK() tool. By using this methid the code results ligher and cleaner */
+#define CHECK(X) ({int __val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : __val); })
 
 /* CONSTANTS */
 #define Z_UB 9.9   // Upper bound of z axes.
@@ -76,16 +78,8 @@ int main() {
     sa.sa_flags = SA_RESTART;
 
     /* sigaction for SIGUSR1 & SIGUSR2 */
-    if (sigaction(SIGUSR1, &sa, NULL) == -1)
-    {
-        perror("Sigaction error, SIGUSR1 on motor z\n");
-        return -8;
-    }
-    if (sigaction(SIGUSR2, &sa, NULL) == -1)
-    {
-        perror("Sigaction error, SIGUSR2 on motor z\n");
-        return -9;
-    }
+    CHECK(sigaction(SIGUSR1, &sa, NULL));
+    CHECK(sigaction(SIGUSR2, &sa, NULL));
 
     log_file = fopen("Log.txt", "a"); // Open the log file
 
@@ -99,21 +93,17 @@ int main() {
     tv.tv_usec = 0;
 
     /* Open pipes. */
-    fd_z = open(fifo_z, O_RDONLY);
-    fd_inspection_z = open(fifo_est_pos_z, O_WRONLY);
+    fd_z = CHECK(open(fifo_z, O_RDONLY));
+    fd_inspection_z = CHECK(open(fifo_est_pos_z, O_WRONLY));
 
     while (1) {
 
         /* Initialize the set of file descriptors for the select system call. */
         FD_ZERO(&rset);
         FD_SET(fd_z, &rset);
-        ret = select(FD_SETSIZE, &rset, NULL, NULL, &tv);
+        ret = CHECK(select(FD_SETSIZE, &rset, NULL, NULL, &tv));
 
-        if (ret == -1) { // An error occours.
-            perror("select() on motor z\n");
-            fflush(stdout);
-        }
-        else if (FD_ISSET(fd_z, &rset) != 0) { // There is something to read!
+        if (FD_ISSET(fd_z, &rset) != 0) { // There is something to read!
             read(fd_z, &command, sizeof(int)); // Update the command.
 
             sprintf(str, "motor_z   : command received = %d.\n", command);
@@ -163,7 +153,7 @@ int main() {
         to exists even if the system is resetting!  */
     /*  Send the estimate position to the inspection console. */
         est_pos_z = z_position + float_rand(-0.005, 0.005); //compute the estimated position
-        write(fd_inspection_z, &est_pos_z, sizeof(float));  //send to inspection konsole
+        CHECK(write(fd_inspection_z, &est_pos_z, sizeof(float)));  //send to inspection konsole
 
         sprintf(str, "motor_z   : z_position = %f\n", z_position);
         logPrint(str);
@@ -174,8 +164,8 @@ int main() {
     } // End of the while cycle.
 
     /* Close pipes. */
-    close(fd_z);
-    close(fd_inspection_z);
+    CHECK(close(fd_z));
+    CHECK(close(fd_inspection_z));
 
     logPrint("motor_x   : Motor x ended.\n");
 

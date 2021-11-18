@@ -10,6 +10,8 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <time.h>
+/* Defining CHECK() tool. By using this methid the code results ligher and cleaner */
+#define CHECK(X) ({int __val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : __val); })
 
 /* GLOBAL VARIABLES */
 pid_t pid_command, pid_motor_x, pid_motor_z, pid_inspection, pid_wd; // PIDs of child programs.
@@ -30,22 +32,13 @@ int spawn( const char * program, char ** arg_list ) {
         return child_pid;
 
     else { // Child process.
-        execvp (program, arg_list);
-        perror("exec failed");  // If it's executed, an error occurred.
-        return -1;
+        CHECK(execvp (program, arg_list));
     }
 }
 
 void create_fifo ( const char * name ) {
     /* Function to generate a named pipe. */
-
-    if(mkfifo(name, 0666) == -1){
-
-        if (errno != EEXIST){ // Error management for mkfifo.
-          perror("Error creating named fifo\n");
-          exit(-1);
-        }
-    }
+    mkfifo(name, 0666);
 }
 
 void logPrint ( char * string ) {
@@ -66,8 +59,8 @@ int main() {
     log_file = fopen("Log.txt", "a");
 
     if(!log_file){ // Error management for fopen.
-        perror("Error file");
-        return -2;
+        perror("Error opening file");
+        return -2; //return value put at -2 just to avoid confusing with the CHECK function control.
     }
 
     logPrint("Master    : Log file created by master process.\n");
@@ -109,22 +102,33 @@ int main() {
     logPrint("Master    : Created all processes.\n");
 
     /* Waits for child processes. */ 
-    wait(&wstatus);
+    CHECK(wait(&wstatus));
 
     /* Deletes named pipes. */
-    unlink("fifo_command_to_mot_x");
-    unlink("fifo_command_to_mot_z");
-    unlink("fifo_est_pos_x");
-    unlink("fifo_est_pos_z");
-    unlink("command_to_in_pid");
+    CHECK(unlink("/tmp/fifo_command_to_mot_x"));
+    CHECK(unlink("/tmp/fifo_command_to_mot_z"));
+    CHECK(unlink("/tmp/fifo_est_pos_x"));
+    CHECK(unlink("/tmp/fifo_est_pos_z"));
+    CHECK(unlink("/tmp/command_to_in_pid"));
 
-    /* If any of the child processes returns, then kill al the processes. */ 
+    /*  If any of the child processes returns 0, then kill al the processes exept for the command konsole.
+        This is because the command konsole is the only one who can terminate with status 0. In such case 
+        the CHECK function would generate an error because the master process would try to kill a process
+        that has already terminated.                                                                    */ 
+    if(wstatus==0){ //
+        CHECK(kill(pid_inspection, SIGKILL));
+        CHECK(kill(pid_wd, SIGKILL));
+        CHECK(kill(pid_motor_x, SIGKILL));
+        CHECK(kill(pid_motor_z, SIGKILL));
+    }
+    else{ //In this case an error occurred, so every processes must be killed
+        CHECK(kill(pid_inspection, SIGKILL));
+        CHECK(kill(pid_command, SIGKILL)); //kill the command konsole
+        CHECK(kill(pid_wd, SIGKILL));
+        CHECK(kill(pid_motor_x, SIGKILL));
+        CHECK(kill(pid_motor_z, SIGKILL));
+    }
 
-    kill(pid_inspection, SIGKILL);
-    kill(pid_command, SIGKILL);
-    kill(pid_wd, SIGKILL);
-    kill(pid_motor_x, SIGKILL);
-    kill(pid_motor_z, SIGKILL);
 
     char str[100];
     sprintf(str, "Master    : Child process terminated with status : %d\n", wstatus); //here we can check if the termionation was due to a problem or not.

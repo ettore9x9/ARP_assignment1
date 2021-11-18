@@ -9,6 +9,8 @@
 #include <string.h>
 #include <time.h>
 #include <stdbool.h>
+/* Defining CHECK() tool. By using this methid the code results ligher and cleaner */
+#define CHECK(X) ({int __val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : __val); })
 
 /* CONSTANTS */
 #define X_UB 9.9   // Upper bound of x axes.
@@ -75,15 +77,8 @@ int main() {
     sa.sa_flags = SA_RESTART;
 
     /* sigaction for SIGUSR1 & SIGUSR2 */
-    if(sigaction(SIGUSR1,&sa,NULL)==-1){
-        perror("Sigaction error, SIGUSR1 motor x\n");
-        return -5;
-    }
-    
-    if(sigaction(SIGUSR2,&sa,NULL)==-1){
-        perror("Sigaction error, SIGUSR2 motor x");
-        return -6;
-    }
+    CHECK(sigaction(SIGUSR1,&sa,NULL));
+    CHECK(sigaction(SIGUSR2,&sa,NULL));  
 
     log_file = fopen("Log.txt", "a"); // Open the log file.
 
@@ -106,13 +101,9 @@ int main() {
         FD_ZERO(&rset);
         FD_SET(fd_x, &rset);
 
-        ret = select(FD_SETSIZE, &rset, NULL, NULL, &tv);
+        ret = CHECK(select(FD_SETSIZE, &rset, NULL, NULL, &tv));
 
-        if (ret == -1) { // An error occours.
-            perror("select() on motor x\n");
-            return -7;
-        }
-        else if (FD_ISSET(fd_x, &rset) != 0) { // There is something to read!
+        if (FD_ISSET(fd_x, &rset) != 0) { // There is something to read!
             read(fd_x, &command, sizeof(int)); // Update the command.
 
             sprintf(str, "motor_x   : command received = %d.\n", command);
@@ -163,7 +154,7 @@ int main() {
         to exists even if the system is resetting!  */
     /*  Send the estimate position to the inspection console. */
         est_pos_x = x_position + float_rand(-0.005, 0.005); //compute the estimated position
-        write(fd_inspection_x, &est_pos_x, sizeof(float));  //send to inspection konsole
+        CHECK(write(fd_inspection_x, &est_pos_x, sizeof(float)));  //send to inspection konsole
 
         sprintf(str, "motor_x   : x_position = %f\n", x_position);
         logPrint(str);
@@ -174,8 +165,8 @@ int main() {
     } // End of the while cycle.
 
     /* Close pipes. */
-    close(fd_x);
-    close(fd_inspection_x);
+    CHECK(close(fd_x));
+    CHECK(close(fd_inspection_x));
 
     logPrint("motor_x   : Motor x ended.\n");
 

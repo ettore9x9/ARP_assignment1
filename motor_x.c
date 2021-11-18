@@ -79,6 +79,7 @@ int main() {
         perror("Sigaction error, SIGUSR1 motor x\n");
         return -6;
     }
+    
     if(sigaction(SIGUSR2,&sa,NULL)==-1){
         perror("Sigaction error, SIGUSR2 motor x");
         return -7;

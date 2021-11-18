@@ -30,16 +30,30 @@ char * fifo_est_pos_z = "/tmp/fifo_est_pos_z";		//File path
 char * fifo_inspection = "/tmp/command_to_in_pid";	//File path
 
 /* FUNCTIONS HEADERS */
+void signal_handler( int sig );
 void setup_console();
 void printer( float x, float z );
 void logPrint ( char * string );
 
 /* FUNCTIONS */
+void signal_handler( int sig ) {
+    /* Function to handle the SIGWINCH signal. The OS send this signal to the process when the size of
+    the terminal changes. */
+
+    if (sig == SIGWINCH) {
+    /* If the size of the terminal changes, clear and restart the grafic interface. */
+    	endwin();
+        setup_console();
+    }
+}
+
 void setup_console() {
 	/* Function to initialize the console.
 	To refresh the same console, the ncurses library is used. */
 
 	initscr(); // Init the console screen.
+	refresh();
+	clear();
 
 	/* Print the base structure of the user interface. */
 	addstr("This is the INSPECTION console.\n");
@@ -137,6 +151,18 @@ int main(int argc, char *argv[])
 	int fd_from_motor_x, fd_from_motor_z, fd_command_pid; //file descriptors
 	int ret;											  //select() system call return value
 	char str[80];                                         // String to print on log file.
+
+	/* Signals that the process can receive. */
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = &signal_handler;
+    sa.sa_flags = SA_RESTART;
+
+    /* sigaction for SIGWINCH */
+    if(sigaction(SIGWINCH,&sa,NULL)==-1){
+        perror("Sigaction error, SIGUSR1 motor x\n");
+        return -6;
+    }
 
 	/*process IDs*/
 	pid_t pid_motor_x = atoi(argv[1]);

@@ -132,5 +132,4 @@ int main() {
     fclose(log_file_create);
 
     return 0;
-
 }

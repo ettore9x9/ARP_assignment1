@@ -12,7 +12,8 @@
 #include <math.h>
 #include <time.h>
 #include <stdbool.h>
-/* Defining CHECK() tool. By using this methid the code results ligher and cleaner */
+
+/* Defining CHECK() tool. By using this methid the code results ligher and cleaner. */
 #define CHECK(X) ({int __val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : __val); })
 
 /* COLORS */
@@ -26,10 +27,10 @@
 int last_row = 20;
 int last_col = 20;
 FILE *log_file;										// Log file. 
-time_t start_time;
-char * fifo_est_pos_x = "/tmp/fifo_est_pos_x"; 		//File path
-char * fifo_est_pos_z = "/tmp/fifo_est_pos_z";		//File path
-char * fifo_inspection = "/tmp/command_to_in_pid";	//File path
+time_t start_time;                                  // Starting time.
+char * fifo_est_pos_x = "/tmp/fifo_est_pos_x"; 		// File path.
+char * fifo_est_pos_z = "/tmp/fifo_est_pos_z";		// File path.
+char * fifo_inspection = "/tmp/command_to_in_pid";	// File path.
 
 /* FUNCTIONS HEADERS */
 void signal_handler( int sig );
@@ -147,8 +148,7 @@ void logPrint ( char * string ) {
 }
 
 /* MAIN */
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 
 	int fd_from_motor_x, fd_from_motor_z, fd_command_pid; //file descriptors
 	int ret;											  //select() system call return value
@@ -174,8 +174,8 @@ int main(int argc, char *argv[])
 
 	CHECK(read(fd_command_pid, &command_pid, sizeof(int)));
 
-	float est_pos_x, est_pos_z; // estimate hoist X and Z positions
-	char alarm;					//char that will contain the 'stop' or 'reset' command
+	float est_pos_x, est_pos_z; // Estimate hoist X and Z positions.
+	char alarm;					// Char that will contain the 'stop' or 'reset' command.
 
 	fd_set rset;				//set of ready file descriptors
 
@@ -191,11 +191,11 @@ int main(int argc, char *argv[])
 	/* Open the log file */
 	log_file = fopen("Log.txt", "a"); 
 
-	start_time = time(NULL);
-
 	logPrint("inspection: Inspection console started.\n");
 
 	setup_console();
+
+	start_time = time(NULL);    // Evaluate the starting time.
 
 	while (1) {
 
@@ -236,10 +236,12 @@ int main(int argc, char *argv[])
 		{
 			CHECK(read(fd_from_motor_z, &est_pos_z, sizeof(float))); //read the estimated position from motors...
 		}
+
 		if (FD_ISSET(fd_from_motor_x, &rset) != 0)
 		{
 			CHECK(read(fd_from_motor_x, &est_pos_x, sizeof(float)));
 		}
+
 		if ( (est_pos_x < 0.001) && (est_pos_z < 0.001) && (alarm == 'r') )
 		{
 			CHECK(kill(command_pid, SIGUSR1)); //alarm the command console that resetting has finished!

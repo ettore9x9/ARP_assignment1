@@ -10,7 +10,8 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <time.h>
-/* Defining CHECK() tool. By using this methid the code results ligher and cleaner */
+
+/* Defining CHECK() tool. By using this methid the code results ligher and cleaner. */
 #define CHECK(X) ({int __val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : __val); })
 
 /* GLOBAL VARIABLES */
@@ -18,7 +19,7 @@ pid_t pid_command, pid_motor_x, pid_motor_z, pid_inspection, pid_wd; // PIDs of 
 int wstatus;
 FILE * log_file; // Log file.
 
-/* FUNCTIONS HEADERS */
+/* FUNCTION HEADERS */
 int spawn( const char * program, char ** arg_list );
 void create_fifo ( const char * name );
 void logPrint ( char * string) ;
@@ -58,7 +59,7 @@ int main() {
 
     log_file = fopen("Log.txt", "a");
 
-    if(!log_file){ // Error management for fopen.
+    if(!log_file) { // Error management for fopen.
         perror("Error opening file");
         return -2; //return value put at -2 just to avoid confusing with the CHECK function control.
     }
@@ -115,15 +116,14 @@ int main() {
         This is because the command konsole is the only one who can terminate with status 0. In such case 
         the CHECK function would generate an error because the master process would try to kill a process
         that has already terminated.                                                                    */ 
-    if(wstatus==0){ //
+    if(wstatus==0) { 
         CHECK(kill(pid_inspection, SIGKILL));
         CHECK(kill(pid_wd, SIGKILL));
         CHECK(kill(pid_motor_x, SIGKILL));
         CHECK(kill(pid_motor_z, SIGKILL));
-    }
-    else{ //In this case an error occurred, so every processes must be killed
+    } else { //In this case an error occurred, so every processes must be killed
         CHECK(kill(pid_inspection, SIGKILL));
-        CHECK(kill(pid_command, SIGKILL)); //kill the command konsole
+        CHECK(kill(pid_command, SIGKILL));
         CHECK(kill(pid_wd, SIGKILL));
         CHECK(kill(pid_motor_x, SIGKILL));
         CHECK(kill(pid_motor_z, SIGKILL));

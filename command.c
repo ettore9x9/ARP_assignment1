@@ -11,7 +11,8 @@
 #include <termios.h>
 #include <time.h>
 #include <stdbool.h>
-/* Defining CHECK() tool. By using this methid the code results ligher and cleaner */
+
+/* Defining CHECK() tool. By using this methid the code results ligher and cleaner. */
 #define CHECK(X) ({int __val = (X); (__val == -1 ? ({fprintf(stderr,"ERROR (" __FILE__ ":%d) -- %s\n",__LINE__,strerror(errno)); exit(-1);-1;}) : __val); })
 
 /* COLORS */
@@ -33,9 +34,9 @@ int fd_x, fd_z, fd_pid;                             // File descriptors.
 pid_t command_pid, pid_wd;                          // Process IDs.
 bool resetting = false;                             // Boolean variable for reset the motors.
 FILE *log_file;                                     // Log file.
-char * fifo_z = "/tmp/fifo_command_to_mot_z";       //File path
-char * fifo_x = "/tmp/fifo_command_to_mot_x";       //File path
-char * fifo_inspection = "/tmp/command_to_in_pid";  //File path
+char * fifo_z = "/tmp/fifo_command_to_mot_z";       // File path.
+char * fifo_x = "/tmp/fifo_command_to_mot_x";       // File path.
+char * fifo_inspection = "/tmp/command_to_in_pid";  // File path.
 
 /* FUNCTIONS HEADERS */
 void signal_handler( int sig );
@@ -156,6 +157,10 @@ void setup_terminal (){
     /* Those new settings will be set to STDIN
     TCSANOW tells tcsetattr to change attributes immediately. */
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    printf(" ### COMMAND CONSOLE ### \n \n");
+    fflush(stdout);
+    helpPrint();
 }
 
 void logPrint ( char * string ) {
@@ -181,8 +186,6 @@ void helpPrint () {
 /*MAIN()*/
 int main(int argc, char *argv[]) {
 
-    setup_terminal();
-
     /* Collects PIDs. */
     pid_wd = atoi(argv[1]);
     command_pid = getpid();
@@ -201,10 +204,6 @@ int main(int argc, char *argv[]) {
 
     logPrint("command   : Command console started\n");
 
-    printf(" ### COMMAND CONSOLE ### \n \n");
-    fflush(stdout);
-    helpPrint();
-
     /* Opening pipes */
     fd_z = CHECK(open(fifo_z, O_WRONLY));
     fd_x = CHECK(open(fifo_x, O_WRONLY));
@@ -212,6 +211,8 @@ int main(int argc, char *argv[]) {
 
     /* Send the Command PID to the Inspection*/
     CHECK(write(fd_pid, &command_pid, sizeof(int)));
+
+    setup_terminal();
 
     while (1)
     {

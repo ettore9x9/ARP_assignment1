@@ -1,0 +1,12 @@
+######## MASTER PROCESS ########
+							
+Master process executes all the processes. Through the the fork() system call we could create five child processes, each of them use the execvp system call. The processes that the master's children executes are: command console, inspection console, motor_x, motor_z and the WatchDog.
+It manages also the creation and rhe removal of every named pipe used for inter-process communication, it prints some information on the LogFile such as the termination value that is useful ofr understanding whether the termination was due to an error or not.
+
+
+
+
+
+
+
+

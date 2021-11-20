@@ -45,11 +45,11 @@ fi
 
 echo "Begin sources' compilation ...";
 
-gcc $1/src/master/master.c -o master
-gcc $1/src/command_console/command.c -o command
-gcc $1/src/motor_x/motor_x.c -o motor_x
-gcc $1/src/motor_z/motor_z.c -o motor_z
-gcc $1/src/inspection_console/inspection.c -lncurses -lm -o inspection
-gcc $1/src/watchdog/wd.c -o wd
+gcc $1/src/master/master.c -o $1/src/executables/master;
+gcc $1/src/command/command.c -o $1/src/executables/command;
+gcc $1/src/motor_x/motor_x.c -o $1/src/executables/motor_x;
+gcc $1/src/motor_z/motor_z.c -o $1/src/executables/motor_z;
+gcc $1/src/inspection/inspection.c -lncurses -lm -o $1/src/executables/inspection;
+gcc $1/src/watchdog/wd.c -o $1/src/executables/wd;
 
 echo "You can run the program in $1 with ./run.sh ";

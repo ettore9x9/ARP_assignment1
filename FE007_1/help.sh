@@ -1,3 +1,4 @@
+more -d ./general_instructions.txt;
 more -d ./src/master/master.txt;
 more -d ./src/command/command.txt;
 more -d ./src/motor_x/motor_x.txt;

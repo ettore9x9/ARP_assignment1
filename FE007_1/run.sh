@@ -1,0 +1,1 @@
+(cd src/executables; ./master);
